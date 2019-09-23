@@ -261,13 +261,14 @@ export class GameLauncher {
     let escArgs: string = args;
     if (useWine) {
       escFilename = 'wine';
-      escArgs = `start /unix "${filename}" "${args}"`;
+      escArgs = `start /unix "${filename}" "${escapeLinuxArgs(args)}"`;
     } else {
       switch (window.External.platform) {
         case 'win32':
           escFilename = filename;
           escArgs = escapeWin(args);
           break;
+        case 'darwin':
         case 'linux':
           escFilename = filename;
           escArgs = escapeLinuxArgs(args);
