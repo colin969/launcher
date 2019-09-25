@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macOS-latest]
+        arch: [win32, linux, darwin]
 
     steps:
     - uses: actions/checkout@v1
@@ -25,7 +25,7 @@ jobs:
       env:
         CI: true
     - name: npm build
-      run: npm run build --if-present
+      run: npm run build:${{ matrix.arch }} --if-present
       env:
         CI: true
         
