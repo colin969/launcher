@@ -1,8 +1,6 @@
 name: Build Release
 
-on:
-  project_column:
-    types: [created]
+on: [release]
 
 jobs:
   build:
