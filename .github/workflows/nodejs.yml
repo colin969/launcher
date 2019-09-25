@@ -74,11 +74,3 @@ jobs:
         asset_name: flashpoint-launcher-${{ matrix.arch }}.zip
         tag: latest
         overwrite: true
-    - name: Upload binaries to tagged release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-          files: dist/flashpoint-launcher-${{ matrix.arch }}.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
