@@ -36,10 +36,6 @@ jobs:
     steps: 
     - name: Checkout repository
       uses: actions/checkout@master
-    - name: Delete old latest
-      run: |
-        git tag -d latest
-        git push origin :refs/tags/latest
     - name: Create new latest
       uses: EndBug/latest-tag@latest
       env:
