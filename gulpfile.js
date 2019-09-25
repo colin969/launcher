@@ -5,7 +5,7 @@ const packager = require('electron-packager');
 const serialHooks = require('electron-packager/src/hooks').serialHooks;
 const { exec } = require('child_process');
 
-const config = {
+const config = { 
   buildVersion: Date.now().toString(),
   isRelease: process.env.NODE_ENV === 'production',
   isStaticInstall: process.env.STATIC_INSTALL ? true : false,
