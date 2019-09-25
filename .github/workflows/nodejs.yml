@@ -47,7 +47,7 @@ jobs:
         
   release:
     name: Release
-    needs: update-release
+    needs: generate-release
     runs-on: windows-latest
     
     strategy:
