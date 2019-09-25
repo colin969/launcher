@@ -29,14 +29,18 @@ jobs:
       env:
         CI: true
         
-  update-release:
+  generate-release:
     name: Update Release Tag
     needs: build
     runs-on: ubuntu-latest
     steps: 
     - name: Checkout repository
       uses: actions/checkout@master
-    - name: Run latest-tag
+    - name: Delete old latest
+      run: |
+        git tag -d latest
+        git push origin :refs/tags/latest
+    - name: Create new latest
       uses: EndBug/latest-tag@latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
