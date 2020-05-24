@@ -563,6 +563,7 @@ export function registerRequestCallbacks(state: BackState): void {
 
   state.socketServer.register<MergeTagData>(BackIn.MERGE_TAGS, async (event, req) => {
     const newTag = await TagManager.mergeTags(req.data, state.socketServer.openDialog(event.target));
+    await TagManager.cleanupTagAliases();
     respond<Tag>(event.target, {
       id: req.id,
       type: BackOut.MERGE_TAGS,

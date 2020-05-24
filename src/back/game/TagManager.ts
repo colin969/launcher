@@ -5,7 +5,6 @@ import { Tag } from '@database/entity/Tag';
 import { TagAlias } from '@database/entity/TagAlias';
 import { TagCategory } from '@database/entity/TagCategory';
 import { BackOut, MergeTagData, TagCategoriesChangeData, TagSuggestion } from '@shared/back/types';
-import { getRandomHexColor } from '@shared/Util';
 import { getManager, Like, Not } from 'typeorm';
 import { GameManager } from './GameManager';
 
@@ -42,6 +41,13 @@ export namespace TagManager {
 
   export async function saveTag(tag: Tag): Promise<Tag> {
     const tagRepository = getManager().getRepository(Tag);
+    const tagAliasRepository = getManager().getRepository(TagAlias);
+    // Prevent it trying to create the Primary Alias twice and erroring when it doesn't exist yet
+    const primaryAlias = await tagAliasRepository.save(tag.primaryAlias);
+    const aliasesIndex = tag.aliases.findIndex(t => t.name === primaryAlias.name);
+    if (aliasesIndex > -1) {
+      tag.aliases[aliasesIndex] = primaryAlias;
+    }
     return tagRepository.save(tag);
   }
 
@@ -70,10 +76,12 @@ export namespace TagManager {
 
   // @TODO : Localize
   export async function mergeTags(mergeData: MergeTagData, openDialog: OpenDialogFunc): Promise<Tag | undefined> {
-    const mergeDest = await TagManager.findTag(mergeData.mergeInto);
-    if (mergeDest) {
-      if (mergeDest.id !== mergeData.toMerge.id) {
-        // Confirm merge
+    // Find the Tag we're going to merge into
+    const newTag = await TagManager.findTag(mergeData.mergeInto);
+    if (newTag) {
+      // Tag to be merged into found
+      if (newTag.id !== mergeData.toMerge.id) {
+        // Confirm we really do want to merge
         const res = await openDialog({
           title: 'Are you sure?',
           message: 'Merge ' + mergeData.toMerge.primaryAlias.name + ' into ' + mergeData.mergeInto + '?',
@@ -82,23 +90,24 @@ export namespace TagManager {
         if (res !== 0) {
           return undefined;
         }
-        // Move names first
-        if (mergeData.makeAlias) {
-          for (const alias of mergeData.toMerge.aliases) {
-            mergeDest.aliases.push(alias);
-          }
-          await TagManager.saveTag(mergeDest);
-        }
-        // Move game tag references next
+        // Add the new tag onto every game that has the old tag
         const games = await GameManager.findGamesWithTag(mergeData.toMerge);
         for (const game of games) {
-          if (game.tags.findIndex(t => t.id === mergeDest.id) === -1) {
-            game.tags.push(mergeDest);
+          if (game.tags.findIndex(t => t.id === newTag.id) === -1) {
+            game.tags.push(newTag);
           }
         }
         await GameManager.updateGames(games);
+        // Delete the old tag
         if (mergeData.toMerge.id) {
           await TagManager.deleteTag(mergeData.toMerge.id, openDialog, true);
+        }
+        // Move the aliases onto the new tag is requested
+        if (mergeData.makeAlias) {
+          for (const alias of mergeData.toMerge.aliases) {
+            newTag.aliases.push(alias);
+          }
+          await TagManager.saveTag(newTag);
         }
       } else {
         openDialog({
@@ -114,7 +123,7 @@ export namespace TagManager {
         buttons: [ 'Ok ' ]
       });
     }
-    return mergeDest;
+    return newTag;
   }
 
   export async function cleanupTagAliases() {
