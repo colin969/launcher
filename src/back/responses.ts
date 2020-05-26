@@ -336,7 +336,7 @@ export function registerRequestCallbacks(state: BackState): void {
       const rawData = await fs.promises.readFile(req.data, 'utf-8');
       const jsonData = JSON.parse(rawData);
       const newPlaylist = createPlaylist(jsonData);
-      const existingPlaylist = await GameManager.findPlaylist(jsonData['id'], true);
+      const existingPlaylist = await GameManager.findPlaylist(newPlaylist.id, true);
       if (existingPlaylist) {
         // Conflict, resolve with user
         const dialogFunc = state.socketServer.openDialog(event.target);
