@@ -1,6 +1,9 @@
-import { Column, CreateDateColumn, Entity, Index, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, OneToOne } from 'typeorm';
 import { AdditionalApp } from './AdditionalApp';
 import { Tag } from './Tag';
+import { InstallState } from './types';
+import { ContentServer } from './ContentServer';
+import { Content } from './Content';
 
 @Index('IDX_lookup_title',        ['library', 'title'])
 @Index('IDX_lookup_dateAdded',    ['library', 'dateAdded'])
@@ -122,6 +125,19 @@ export class Game {
   })
   /** All attached Additional Apps of a game */
   addApps: AdditionalApp[];
+
+  @Column({ nullable: true })
+  contentHash?: string;
+
+  @OneToOne(type => Content, c => c.game, { eager: true })
+  contentUsed?: Content;
+
+  @OneToMany(type => Content, c => c.game, { cascade: true, eager: true })
+  content: Content[];
+
+  @Column()
+  /** Install State of the Game, see InstallState definition */
+  installState: InstallState;
 
   /** If the game is a placeholder (and can therefore not be saved) */
   placeholder: boolean;

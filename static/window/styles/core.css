@@ -1345,6 +1345,46 @@ body {
   font-size: 2em;
   font-style: bold;
 }
+/* Install State Button */
+.play-button__wrapper {
+  display: flex;
+  margin: 0.8rem 0 0 0;
+  width: 100%;
+}
+.play-button {
+  flex-grow: 9;
+  padding: 0.1rem;
+  font-size: 2.5em;
+  font-weight: bold;
+  border-right: none;
+}
+.play-button__context {
+  border-left: dotted;
+  height: 100%;
+  width: 100%;
+}
+.play-button__wrapper:hover .play-button__context {
+  border-left: none;
+}
+.play-button__dropdown {
+  position: relative;
+  display: inline-block;
+  flex-grow: 1;
+  font-size: 1.25em;
+
+}
+.play-button__dropdown-content__wrapper {
+  display: none;
+  position: absolute;;
+  z-index: 1;
+  right: 0;
+}
+.play-button__dropdown-content {
+  padding: 0.5rem;
+}
+.play-button__dropdown:hover .play-button__dropdown-content__wrapper {
+  display: block;
+}
 /* GameImageSplit */
 .game-image-split {
   flex: 1 1 auto;

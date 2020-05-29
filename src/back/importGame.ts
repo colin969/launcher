@@ -2,19 +2,22 @@ import { AdditionalApp } from '@database/entity/AdditionalApp';
 import { Game } from '@database/entity/Game';
 import { Tag } from '@database/entity/Tag';
 import { TagCategory } from '@database/entity/TagCategory';
-import { validateSemiUUID } from '@renderer/util/uuid';
+import { InstallState } from '@database/entity/types';
+import { get7zExec } from '@renderer/util/SevenZip';
 import { htdocsPath, LOGOS, SCREENSHOTS } from '@shared/constants';
 import { convertEditToCurationMeta } from '@shared/curate/metaToMeta';
 import { CurationIndexImage, EditAddAppCuration, EditAddAppCurationMeta, EditCuration, EditCurationMeta } from '@shared/curate/types';
-import { getContentFolderByKey, getCurationFolder, indexContentFolder } from '@shared/curate/util';
+import { getCurationFolder, indexContentFolder } from '@shared/curate/util';
 import { sizeToString } from '@shared/Util';
 import { Coerce } from '@shared/utils/Coerce';
 import { exec } from 'child_process';
 import * as fs from 'fs';
-import { copy } from 'fs-extra';
+import { copy, pathExists } from 'fs-extra';
+import { add } from 'node-7z';
 import * as path from 'path';
 import { promisify } from 'util';
 import * as YAML from 'yaml';
+import * as crypto from 'crypto';
 import { GameManager } from './game/GameManager';
 import { TagManager } from './game/TagManager';
 import { GameManagerState } from './game/types';
@@ -42,9 +45,11 @@ type ImportCurationOpts = {
   saveCuration: boolean;
   fpPath: string;
   imageFolderPath: string;
+  gameArchiveFolderPath: string;
   openDialog: OpenDialogFunc;
   openExternal: OpenExternalFunc;
   tagCategories: TagCategory[];
+  isDev: boolean;
 }
 
 /**
@@ -60,6 +65,8 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
     saveCuration,
     fpPath,
     imageFolderPath: imagePath,
+    gameArchiveFolderPath,
+    isDev
   } = opts;
 
   const logMsg = logMessage || noop;
@@ -86,17 +93,20 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
       }
     }
   }
+  // Save working meta
+  const metaPath = path.join(getCurationFolder(curation, fpPath), 'meta.yaml');
+  curation.meta.contentHash = await hashFolder(getCurationFolder(curation, fpPath), ['meta.', 'logo.', 'ss.']);
+  const meta = YAML.stringify(convertEditToCurationMeta(curation.meta, opts.tagCategories, curation.addApps));
+  await writeFile(metaPath, meta);
   // Build content list
-  const contentToMove = [
-    [getContentFolderByKey(curation.key, fpPath), path.join(fpPath, htdocsPath)]
-  ];
+  const contentToMove: string[][] = [];
   const extrasAddApp = curation.addApps.find(a => a.meta.applicationPath === ':extras:');
   if (extrasAddApp && extrasAddApp.meta.launchCommand && extrasAddApp.meta.launchCommand.length > 0) {
     // Add extras folder if meta has an entry
     contentToMove.push([path.join(getCurationFolder(curation, fpPath), 'Extras'), path.join(fpPath, 'Extras', extrasAddApp.meta.launchCommand)]);
   }
   // Create and add game and additional applications
-  const gameId = validateSemiUUID(curation.key) ? curation.key : uuid();
+  const gameId = curation.meta.id;
   const oldGame = await GameManager.findGame(gameId);
   if (oldGame) {
     const response = await opts.openDialog({
@@ -129,47 +139,67 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
 
   // Copy content and Extra files
   curationLog(log, 'Importing Curation Content');
-  await (async () => {
-    // Copy each paired content folder one at a time (allows for cancellation)
-    for (let pair of contentToMove) {
-      await copyFolder(pair[0], pair[1], moveFiles, opts.openDialog, log);
-    }
-  })()
-  .then(async () => {
-    curationLog(log, 'Saving Imported Content');
-    try {
-      if (saveCuration) {
-        // Save working meta
-        const metaPath = path.join(getCurationFolder(curation, fpPath), 'meta.yaml');
-        const meta = YAML.stringify(convertEditToCurationMeta(curation.meta, opts.tagCategories, curation.addApps));
-        await writeFile(metaPath, meta);
-        // Date in form 'YYYY-MM-DD' for folder sorting
-        const date = new Date();
-        const dateStr = date.getFullYear().toString() + '-' +
-                        (date.getUTCMonth() + 1).toString().padStart(2, '0') + '-' +
-                        date.getUTCDate().toString().padStart(2, '0');
-        const backupPath = path.join(fpPath, 'Curations', '_Imported', `${dateStr}__${curation.key}`);
-        await copyFolder(getCurationFolder(curation, fpPath), backupPath, true, opts.openDialog, log);
-      }
-      if (log) {
-        logMsg('Content Copied', curation);
-      }
-    } catch (error) {
-      curationLog(log, `Error importing ${curation.meta.title} - Informing user...`);
-      const res = await opts.openDialog({
-        title: 'Error saving curation',
-        message: 'Saving curation import failed. Some/all files failed to move. Please check the content folder yourself before removing manually.\n\nOpen folder now?',
-        buttons: ['Yes', 'No']
+
+  // Make sure path exists
+  const gameArchiveFullPath = path.join(fpPath, gameArchiveFolderPath);
+  if (!(await pathExists(gameArchiveFullPath))) {
+    await fs.promises.mkdir(gameArchiveFullPath);
+  }
+  // Copy game archive to archive folder
+  const archivePath = path.join(gameArchiveFullPath, gameId + '.7z');
+  const archiveStream = add(archivePath, path.join(getCurationFolder(curation, fpPath), '*'), {
+    recursive: true,
+    $bin: get7zExec(isDev)
+  });
+
+  return new Promise<void>((resolve, reject) => {
+    archiveStream.on('error', () => {
+      console.error('Error packing and moving curation');
+      reject();
+    });
+    archiveStream.on('end', () => {
+      (async () => {
+        // Copy each paired content folder one at a time (allows for cancellation)
+        for (let pair of contentToMove) {
+          await copyFolder(pair[0], pair[1], moveFiles, opts.openDialog, log);
+        }
+      })()
+      .then(async () => {
+        curationLog(log, 'Saving Imported Content');
+        try {
+          if (saveCuration) {
+            // Date in form 'YYYY-MM-DD' for folder sorting
+            const date = new Date();
+            const dateStr = date.getFullYear().toString() + '-' +
+                            (date.getUTCMonth() + 1).toString().padStart(2, '0') + '-' +
+                            date.getUTCDate().toString().padStart(2, '0');
+            const backupPath = path.join(fpPath, 'Curations', '_Imported', `${dateStr}__${curation.key}.7z`);
+            await fs.promises.copyFile(archivePath, backupPath);
+          }
+          if (log) {
+            logMsg('Content Copied', curation);
+          }
+        } catch (error) {
+          curationLog(log, `Error importing ${curation.meta.title} - Informing user...`);
+          const res = await opts.openDialog({
+            title: 'Error saving curation',
+            message: 'Saving curation import failed. Some/all files failed to move. Please check the content folder yourself before removing manually.\n\nOpen folder now?',
+            buttons: ['Yes', 'No']
+          });
+          if (res === 0) {
+            console.log('Opening curation folder after error');
+            opts.openExternal(getCurationFolder(curation, fpPath));
+          }
+        }
+      })
+      .catch((error) => {
+        curationLog(log, error.message);
+        console.warn(error.message);
+      })
+      .finally(() => {
+        resolve();
       });
-      if (res === 0) {
-        console.log('Opening curation folder after error');
-        opts.openExternal(getCurationFolder(curation, fpPath));
-      }
-    }
-  })
-  .catch((error) => {
-    curationLog(log, error.message);
-    console.warn(error.message);
+    });
   });
 }
 
@@ -230,13 +260,16 @@ async function createGameFromCurationMeta(gameId: string, gameMeta: EditCuration
     version:             gameMeta.version             || '',
     originalDescription: gameMeta.originalDescription || '',
     language:            gameMeta.language            || '',
+    installState:        InstallState.DOWNLOADED,
     dateAdded:           date.toISOString(),
     dateModified:        date.toISOString(),
     broken:              false,
     extreme:             !!strToBool(gameMeta.extreme || ''),
     library:             gameMeta.library || '',
+    contentHash:         gameMeta.contentHash,
     orderTitle: '', // This will be set when saved
     addApps: [],
+    content: [],
     placeholder: false
   };
   game.addApps = addApps.map(addApp => createAddAppFromCurationMeta(addApp, game));
@@ -327,9 +360,8 @@ async function linkContentFolder(curationKey: string, fpPath: string) {
  * @param inFolder Folder to copy from
  * @param outFolder Folder to copy to
  */
-async function copyFolder(inFolder: string, outFolder: string, move: boolean, openDialog: OpenDialogFunc, log: LogFunc | undefined) {
+export async function copyFolder(inFolder: string, outFolder: string, move: boolean, openDialog: OpenDialogFunc, log: LogFunc | undefined, yesToAll: boolean = false) {
   const contentIndex = await indexContentFolder(inFolder, curationLog.bind(undefined, log));
-  let yesToAll = false;
   return Promise.all(
     contentIndex.map(async (content) => {
       // For checking cancel at end
@@ -456,6 +488,8 @@ function createPlaceholderGame(): Game {
     library: '',
     orderTitle: '',
     addApps: [],
+    content: [],
+    installState: InstallState.NOINSTALLER,
     placeholder: true
   };
 }
@@ -476,4 +510,55 @@ export async function createTagsFromLegacy(tags: string): Promise<Tag[]> {
   }
 
   return allTags.filter((v,i) => allTags.findIndex(v2 => v2.id == v.id) == i); // remove dupes
+}
+
+async function hashFolder(path: string, exclude?: string[]): Promise<string> {
+  const fileHashes = await hashFolderContents(path, '', exclude);
+  const sha256hash = crypto.createHash('sha256');
+  for (let hash of fileHashes) {
+    sha256hash.update(hash);
+  }
+  return sha256hash.digest('hex');
+}
+
+async function hashFolderContents(rootPath: string, fileName: string, exclude?: string[]): Promise<string> {
+  const exclusions = exclude || [];
+  const fullPath = path.join(rootPath, fileName);
+  const files = await fs.promises.readdir(fullPath);
+  const fileHashes = await Promise.all(files.map(file => {
+    const filePath = path.join(fullPath, file);
+    return fs.promises.stat(filePath)
+      .then(stat => {
+        const matchesExclude = exclusions.reduce((prev, cur) => {
+          if (prev || filePath.startsWith(cur)) { return true; }
+          else { return false; }
+        }, false);
+        if (stat.isDirectory() && !matchesExclude) {
+          return hashFolderContents(fullPath, file, exclude);
+        } if (stat.isFile() && !matchesExclude) {
+          return hashFile(filePath);
+        } else {
+          return '';
+        }
+      });
+  }));
+  const sha256hash = crypto.createHash('sha256');
+  for (let hash of fileHashes) {
+    sha256hash.update(hash);
+  }
+  return sha256hash.digest('hex');
+}
+
+async function hashFile(filePath: string): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const sha256hash = crypto.createHash('sha256');
+    const inStream = fs.createReadStream(filePath);
+    inStream.on('data', chunk => {
+      sha256hash.update(chunk);
+    });
+    inStream.on('end', () => {
+      resolve(sha256hash.digest('hex'));
+    });
+    inStream.on('error', reject);
+  });
 }

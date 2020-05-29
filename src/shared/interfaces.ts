@@ -8,6 +8,7 @@ import { LangContainer, LangFile } from './lang';
 import { ILogEntry } from './Log/interface';
 import { IAppPreferencesData } from './preferences/interfaces';
 import { Theme } from './ThemeFile';
+import { ContentServer } from '@database/entity/ContentServer';
 
 /** Recursively set all properties as optional. */
 export type DeepPartial<T> = {
@@ -94,6 +95,7 @@ export interface IMainWindowExternal {
   initialPlatforms: Record<string, string[]>;
   initialLocaleCode: string;
   initialTagCategories: TagCategory[];
+  initialContentServers: ContentServer[];
 
   /**
    * Wait for the preload to initialize.
@@ -243,6 +245,7 @@ type MetaEditProperties = (
   | 'originalDescription'
   | 'language'
   | 'library'
+  | 'contentHash'
 )
 
 /** Flags of which game properties to export. */

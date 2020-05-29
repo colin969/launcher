@@ -38,6 +38,7 @@ export function parseMetaEdit(data: any, onError?: (error: string) => void): Met
   parser.prop('originalDescription', v => parsed.originalDescription = str(v), true);
   parser.prop('language',            v => parsed.language            = str(v), true);
   parser.prop('library',             v => parsed.library             = str(v), true);
+  parser.prop('contentHash',         v => parsed.contentHash         = str(v), true);
 
   parser.prop('tags', v => parsed.tags = (v !== undefined) ? [] : undefined, true).arrayRaw(v => {
     if (!parsed.tags) { throw new Error('"parsed.tags" is missing (bug)'); }

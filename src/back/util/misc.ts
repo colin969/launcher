@@ -16,6 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 import { uuid } from './uuid';
+import { InstallState } from '@database/entity/types';
 
 const unlink = promisify(fs.unlink);
 
@@ -235,8 +236,10 @@ export async function createGameFromLegacy(game: Legacy_IGameInfo): Promise<Game
     language: game.language,
     library: game.library,
     orderTitle: game.orderTitle,
+    installState: InstallState.LEGACY,
     placeholder: false,
-    addApps: []
+    addApps: [],
+    content: []
   };
 }
 

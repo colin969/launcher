@@ -15,6 +15,8 @@ import { LangContainer, LangFile } from '../lang';
 import { ILogEntry, ILogPreEntry } from '../Log/interface';
 import { IAppPreferencesData } from '../preferences/interfaces';
 import { Theme } from '../ThemeFile';
+import { InstallState } from '@database/entity/types';
+import { ContentServer } from '@database/entity/ContentServer';
 
 export enum BackIn {
   GENERIC_RESPONSE,
@@ -31,6 +33,7 @@ export enum BackIn {
   DELETE_GAME,
   DUPLICATE_GAME,
   EXPORT_GAME,
+  INSTALLSTATE_GAME,
   LAUNCH_ADDAPP,
   SAVE_IMAGE,
   DELETE_IMAGE,
@@ -84,6 +87,7 @@ export enum BackIn {
   UPDATE_PREFERENCES,
   /** API */
   SYNC_GAME_METADATA,
+  SYNC_CONTENT_SERVER,
   // Meta edits
   EXPORT_META_EDIT,
   IMPORT_META_EDITS,
@@ -119,6 +123,8 @@ export enum BackOut {
   TAG_CATEGORIES_CHANGE,
   FIX_TAG_PRIMARY_ALIASES,
   SYNC_GAME_METADATA,
+  SYNC_CONTENT_SERVER,
+  INSTALLSTATE_GAME,
   QUIT,
 }
 
@@ -184,6 +190,7 @@ export type GetRendererInitDataResponse = {
   playlists: Playlist[];
   localeCode: string;
   tagCategories: TagCategory[];
+  contentServers: ContentServer[];
 }
 
 export type GetSuggestionsResponseData = {
@@ -575,3 +582,18 @@ export type ImportMetaEditResult = {
   success: boolean;
   meta?: MetaEdit;
 }
+
+export type GameInstallChangeData = {
+  id: string;
+  newState: InstallState;
+}
+
+export type GameInstallChangeResponse = GameInstallChangeData;
+
+export type SyncContentServerData = {
+  host: string;
+}
+
+export type SyncContentServerResponse = {
+  server?: ContentServer
+};

@@ -15,6 +15,7 @@ export function convertToCurationMeta(game: Game, categories: TagCategory[]): Cu
     return cat ? cat.name : 'default';
   });
   // Game meta
+  parsed['ID']                   = game.id;
   parsed['Title']                = game.title;
   parsed['Series']               = game.series;
   parsed['Developer']            = game.developer;
@@ -33,6 +34,7 @@ export function convertToCurationMeta(game: Game, categories: TagCategory[]): Cu
   parsed['Launch Command']       = game.launchCommand;
   parsed['Game Notes']           = game.notes;
   parsed['Original Description'] = game.originalDescription;
+  parsed['Content Hash']         = game.contentHash;
   // Add-apps meta
   const parsedAddApps: CurationFormatAddApps = {};
   for (let i = 0; i < game.addApps.length; i++) {
@@ -81,6 +83,7 @@ export function convertEditToCurationMeta(curation: EditCurationMeta, categories
     return cat ? cat.name : 'default';
   }) : [''];
   // Edit curation meta
+  parsed['ID']                   = curation.id;
   parsed['Title']                = curation.title;
   parsed['Alternate Titles']     = curation.alternateTitles;
   parsed['Library']              = curation.library;
@@ -102,6 +105,7 @@ export function convertEditToCurationMeta(curation: EditCurationMeta, categories
   parsed['Game Notes']           = curation.notes;
   parsed['Original Description'] = curation.originalDescription;
   parsed['Curation Notes']       = curation.curationNotes;
+  parsed['Content Hash']         = curation.contentHash;
   // Add-apps meta
   const parsedAddApps: CurationFormatAddApps = {};
   if (addApps) {
@@ -154,6 +158,7 @@ export function convertParsedToCurationMeta(curation: ParsedCurationMeta, catego
     return cat ? cat.name : 'default';
   }) : [''];
   // Edit curation meta
+  parsed['ID']                   = curation.game.id;
   parsed['Title']                = curation.game.title;
   parsed['Alternate Titles']     = curation.game.alternateTitles;
   parsed['Library']              = curation.game.library;
@@ -175,6 +180,7 @@ export function convertParsedToCurationMeta(curation: ParsedCurationMeta, catego
   parsed['Game Notes']           = curation.game.notes;
   parsed['Original Description'] = curation.game.originalDescription;
   parsed['Curation Notes']       = curation.game.curationNotes;
+  parsed['Content Hash']         = curation.game.contentHash;
   // Add-apps meta
   const parsedAddApps: CurationFormatAddApps = {};
   if (curation.addApps) {
@@ -238,6 +244,8 @@ type CurationFormatMeta = {
   'Version'?: string;
   'Additional Applications'?: CurationFormatAddApps;
   'Curation Notes'?: string;
+  'ID'?: string;
+  'Content Hash'?: string;
 };
 
 type CurationFormatAddApps = {

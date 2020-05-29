@@ -86,6 +86,7 @@ window.Shared = {
   initialPlatforms: createErrorProxy('initialPlatforms'),
   initialLocaleCode: createErrorProxy('initialLocaleCode'),
   initialTagCategories: createErrorProxy('initialTagCategories'),
+  initialContentServers: createErrorProxy('initialContentServers'),
 
   waitUntilInitialized() {
     if (!isInitDone) { return onInit; }
@@ -121,6 +122,7 @@ const onInit = (async () => {
       };
       window.Shared.fileServerPort = response.data.fileServerPort;
       window.Shared.log.entries = response.data.log;
+      console.log(response.data.log);
       window.Shared.services = response.data.services;
       window.Shared.initialLang = response.data.language;
       window.Shared.initialLangList = response.data.languages;
@@ -131,6 +133,7 @@ const onInit = (async () => {
       window.Shared.initialPlatforms = response.data.platforms;
       window.Shared.initialLocaleCode = response.data.localeCode;
       window.Shared.initialTagCategories = response.data.tagCategories;
+      window.Shared.initialContentServers = response.data.contentServers;
       if (window.Shared.preferences.data.currentTheme) { setTheme(window.Shared.preferences.data.currentTheme); }
       resolve();
     } else { reject(new Error('"Get Renderer Init Data" response does not contain any data.')); }

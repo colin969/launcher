@@ -4,7 +4,7 @@ import * as fs from 'fs-extra';
 import { extractFull } from 'node-7z';
 import * as path from 'path';
 import { ProgressDispatch, ProgressHandle } from '../context/ProgressContext';
-import { pathTo7z } from '../util/SevenZip';
+import { get7zExec } from '../util/SevenZip';
 import { uuid } from '../util/uuid';
 import { curationLog } from './util';
 
@@ -69,7 +69,7 @@ export async function importCurationArchive(filePath: string, key: string = uuid
   try {
     // Extract curation to .temp folder inside curation folder
     await fs.ensureDir(extractPath);
-    await extractFullPromise([filePath, extractPath, { $bin: pathTo7z, $progress: true }], progress);
+    await extractFullPromise([filePath, extractPath, { $bin: get7zExec(), $progress: true }], progress);
     // Find the absolute path to the folder containing meta.yaml
     const rootPath = await getRootPath(extractPath);
     if (rootPath) {
@@ -99,7 +99,7 @@ export async function importCurationArchive(filePath: string, key: string = uuid
  * @param args Arguments to call extractFull
  * @param progress Progress handle to update, if any
  */
-function extractFullPromise(args: Parameters<typeof extractFull>, progress?: ProgressHandle) : Promise<void> {
+export function extractFullPromise(args: Parameters<typeof extractFull>, progress?: ProgressHandle) : Promise<void> {
   return new Promise<void>((resolve, reject) => {
     extractFull(...args)
     .on(('progress'), async (event) => {

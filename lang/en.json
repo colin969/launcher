@@ -20,6 +20,8 @@
     "flashpointPath": "Flashpoint Path",
     "flashpointPathDesc": "Path to the Flashpoint folder (can be relative)",
     "browse": "Browse",
+    "contentServers": "Content Servers",
+    "contentServersDesc": "They serve content, dummy",
     "redirector": "Redirector",
     "redirectorFiddler": "Fiddler",
     "redirectorDesc": "Which software to use for redirecting the game traffic to the local web server. Neither is used on Linux.",
@@ -248,7 +250,14 @@
     "loadingGames": "Loading Games...",
     "thereAreNoGames": "There are no games.",
     "noGameMatchedDesc": "No game title matched your search.",
-    "noGameMatchedSearch": "Try searching for something less restrictive."
+    "noGameMatchedSearch": "Try searching for something less restrictive.",
+    "playable": "Play",
+    "installable": "Install",
+    "downloadable": "Download",
+    "unavailable": "Unavailable",
+    "uninstallGame": "Uninstall",
+    "deleteInstaller": "Delete Installer",
+    "makeCuration": "Make Curation"
   },
   "tags": {
     "noName": "No Name",
@@ -408,7 +417,8 @@
     "areYouSure": "Are you sure?",
     "cancel": "Cancel",
     "mergePlaylists": "Merge Playlists",
-    "newPlaylist": "Stay Seperate"
+    "newPlaylist": "Stay Seperate",
+    "noDownloadsAvailable": "There are no downloads available for this game.\nAre you sure you want to delete the installer?"
   },
   "libraries": {
     "arcade": "Games",

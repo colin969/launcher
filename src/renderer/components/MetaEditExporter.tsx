@@ -106,6 +106,7 @@ function initProperties(): MetaEditFlags {
     originalDescription: false,
     language: false,
     library: false,
+    contentHash: false
   };
 }
 

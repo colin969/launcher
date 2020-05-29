@@ -22,7 +22,7 @@ import { newProgress, ProgressContext, ProgressDispatch } from '../context/Progr
 import { curationLog } from '../curate/util';
 import { toForcedURL } from '../Util';
 import { LangContext } from '../util/lang';
-import { pathTo7z } from '../util/SevenZip';
+import { get7zExec } from '../util/SevenZip';
 import { CheckBox } from './CheckBox';
 import { ConfirmElement, ConfirmElementArgs } from './ConfirmElement';
 import { CurateBoxAddApp } from './CurateBoxAddApp';
@@ -425,7 +425,7 @@ export function CurateBox(props: CurateBoxProps) {
         .then(() => {
           // Zip it all up
           return new Promise<void>((resolve) => {
-            return add(filePath, getCurationFolder2(curation), { recursive: true, $bin: pathTo7z })
+            return add(filePath, getCurationFolder2(curation), { recursive: true, $bin: get7zExec() })
             .on('end', () => { resolve(); })
             .on('error', (error) => {
               curationLog(error.message);

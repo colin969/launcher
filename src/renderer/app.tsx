@@ -42,6 +42,7 @@ import { UpgradeFile } from './upgrade/UpgradeFile';
 import { isFlashpointValidCheck, joinLibraryRoute, openConfirmDialog } from './Util';
 import { LangContext } from './util/lang';
 import { checkUpgradeStateInstalled, checkUpgradeStateUpdated, downloadAndInstallUpgrade } from './util/upgrade';
+import { WithContentServersProps } from './containers/withContentServers';
 
 const autoUpdater: AppUpdater = remote.require('electron-updater').autoUpdater;
 
@@ -78,7 +79,7 @@ type AppOwnProps = {
   search: SearchQuery;
 };
 
-export type AppProps = AppOwnProps & RouteComponentProps & WithPreferencesProps & WithTagCategoriesProps;
+export type AppProps = AppOwnProps & RouteComponentProps & WithPreferencesProps & WithTagCategoriesProps & WithContentServersProps;
 
 export type AppState = {
   views: Record<string, View | undefined>; // views[id] = view
@@ -470,6 +471,7 @@ export class App extends React.Component<AppProps, AppState> {
     }
 
     this.props.setTagCategories(window.Shared.initialTagCategories);
+    this.props.setContentServers(window.Shared.initialContentServers);
   }
 
   componentDidUpdate(prevProps: AppProps, prevState: AppState) {

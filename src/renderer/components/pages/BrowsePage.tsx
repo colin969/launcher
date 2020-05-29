@@ -25,6 +25,7 @@ import { GameList } from '../GameList';
 import { GameOrderChangeEvent } from '../GameOrder';
 import { InputElement } from '../InputField';
 import { ResizableSidebar, SidebarResizeEvent } from '../ResizableSidebar';
+import { InstallState } from '@database/entity/types';
 
 type Pick<T, K extends keyof T> = { [P in K]: T[P]; };
 type StateCallback1 = Pick<BrowsePageState, 'currentGame'|'isEditingGame'|'isNewGame'|'currentPlaylistEntry'>;
@@ -275,6 +276,7 @@ export class BrowsePage extends React.Component<BrowsePageProps, BrowsePageState
             onRemoveSelectedGameFromPlaylist={this.onRemoveSelectedGameFromPlaylist}
             onDeselectPlaylist={this.onRightSidebarDeselectPlaylist}
             onEditPlaylistNotes={this.onEditPlaylistNotes}
+            onLaunchGame={this.onGameLaunch}
             isEditing={this.state.isEditingGame}
             isNewGame={this.state.isNewGame}
             onEditGame={this.onEditGame}
@@ -662,6 +664,8 @@ export class BrowsePage extends React.Component<BrowsePageProps, BrowsePageState
           library: this.props.gameLibrary,
           orderTitle: '',
           addApps: [],
+          content: [],
+          installState: InstallState.LEGACY,
           placeholder: false,
         },
         isEditingGame: true,

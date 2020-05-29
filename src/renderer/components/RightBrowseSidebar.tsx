@@ -2,7 +2,8 @@ import { Game } from '@database/entity/Game';
 import { PlaylistGame } from '@database/entity/PlaylistGame';
 import { Tag } from '@database/entity/Tag';
 import { TagCategory } from '@database/entity/TagCategory';
-import { BackIn, BackOut, DeleteImageData, ImageChangeData, LaunchAddAppData, SaveImageData, TagByIdData, TagByIdResponse, TagGetOrCreateData, TagGetOrCreateResponse, TagSuggestion, WrappedResponse } from '@shared/back/types';
+import { InstallState } from '@database/entity/types';
+import { BackIn, BackOut, DeleteImageData, GameInstallChangeData, GameInstallChangeResponse, ImageChangeData, LaunchAddAppData, SaveImageData, TagByIdData, TagByIdResponse, TagGetOrCreateData, TagGetOrCreateResponse, TagSuggestion, WrappedResponse } from '@shared/back/types';
 import { LOGOS, SCREENSHOTS } from '@shared/constants';
 import { wrapSearchTerm } from '@shared/game/GameFilter';
 import { ModelUtils } from '@shared/game/util';
@@ -24,8 +25,10 @@ import { GameImageSplit } from './GameImageSplit';
 import { ImagePreview } from './ImagePreview';
 import { InputElement, InputField } from './InputField';
 import { OpenIcon } from './OpenIcon';
+import { PlayButton } from './PlayButton';
 import { RightBrowseSidebarAddApp } from './RightBrowseSidebarAddApp';
 import { TagInputField } from './TagInputField';
+import { debounce } from '@shared/utils/debounce';
 
 type OwnProps = {
   /** Currently selected game (if any) */
@@ -42,6 +45,8 @@ type OwnProps = {
   onDeselectPlaylist: () => void;
   /** Called when the playlist notes for the selected game has been changed */
   onEditPlaylistNotes: (text: string) => void;
+  /** Called when the game is to be launched */
+  onLaunchGame: (gameId: string) => void;
   /** If the "edit mode" is currently enabled */
   isEditing: boolean;
   /** If the selected game is a new game being created */
@@ -241,6 +246,15 @@ export class RightBrowseSidebar extends React.Component<RightBrowseSidebarProps,
                   onClick={this.onDeveloperClick}
                   onKeyDown={this.onInputKeyDown} />
               </div>
+            ) }
+            { (!this.props.currentGame || isPlaceholder || editable) ? undefined : (
+              <PlayButton
+                installState={this.props.currentGame ? this.props.currentGame.installState : InstallState.NOINSTALLER }
+                game={this.props.currentGame}
+                onPlayClick={this.onPlayClick}
+                onUninstallClick={this.onUninstallClick}
+                onDeleteInstallerClick={this.onDeleteInstallerClick}
+                onMakeCurationClick={this.onMakeCurationClick} />
             ) }
           </div>
           {/* -- Most Fields -- */}
@@ -887,6 +901,56 @@ export class RightBrowseSidebar extends React.Component<RightBrowseSidebarProps,
       newTags.splice(index, 1);
       this.props.onEditGame({ tags: newTags });
     }
+  }
+
+  onPlayClick = debounce(() => {
+    if (this.props.currentGame) {
+      switch (this.props.currentGame.installState) {
+        case InstallState.NOINSTALLER:
+          if (this.props.currentGame.content.length === 0) {
+            break;
+          }
+        case InstallState.DOWNLOADED:
+          window.Shared.back.send<GameInstallChangeResponse, GameInstallChangeData>(BackIn.INSTALLSTATE_GAME, {
+            id: this.props.currentGame.id,
+            newState: InstallState.PLAYABLE
+          }, (res) => {
+            if (res.data) {
+              this.props.onEditGame({ installState: res.data.newState });
+            }
+          });
+          break;
+        case InstallState.LEGACY:
+        case InstallState.PLAYABLE:
+          this.props.onLaunchGame(this.props.currentGame.id);
+      }
+    }
+  }, 100);
+
+  onUninstallClick = () => {
+    window.Shared.back.send<GameInstallChangeResponse, GameInstallChangeData>(BackIn.INSTALLSTATE_GAME, {
+      id: this.props.currentGame!.id,
+      newState: InstallState.DOWNLOADED
+    }, (res) => {
+      if (res.data) {
+        this.props.onEditGame({ installState: res.data.newState });
+      }
+    });
+  }
+
+  onDeleteInstallerClick = () => {
+    window.Shared.back.send<GameInstallChangeResponse, GameInstallChangeData>(BackIn.INSTALLSTATE_GAME, {
+      id: this.props.currentGame!.id,
+      newState: InstallState.NOINSTALLER
+    }, (res) => {
+      if (res.data) {
+        this.props.onEditGame({ installState: res.data.newState });
+      }
+    });
+  }
+
+  onMakeCurationClick = () => {
+    // TODO
   }
 
   /** Create a callback for when a game field is clicked. */

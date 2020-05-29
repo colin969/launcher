@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as stream from 'stream';
 import { curationLog } from '../curate/util';
 import { UpgradeStage } from '../upgrade/types';
-import { pathTo7z } from './SevenZip';
+import { get7zExec } from './SevenZip';
 const http  = require('follow-redirects').http;
 const https = require('follow-redirects').https;
 
@@ -86,7 +86,7 @@ export function downloadAndInstallUpgrade(upgrade: UpgradeStage, opts: IGetUpgra
       status.currentTask = 'extracting';
       log(`Download of the "${upgrade.title}" upgrade complete!`);
       log(`Extraction of the "${upgrade.title}" upgrade started.`);
-      extractFull(zipPath, extractionPath, { $bin: pathTo7z, $progress: true })
+      extractFull(zipPath, extractionPath, { $bin: get7zExec(), $progress: true })
       .on('progress', (progress) => {
         status.extractProgress = progress.percent / 100;
         status.emit('progress');

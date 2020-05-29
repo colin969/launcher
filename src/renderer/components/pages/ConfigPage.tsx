@@ -1,5 +1,6 @@
+import { WithContentServersProps } from '@renderer/containers/withContentServers';
 import { WithPreferencesProps } from '@renderer/containers/withPreferences';
-import { AddLogData, BackIn, UpdateConfigData } from '@shared/back/types';
+import { AddLogData, BackIn, UpdateConfigData, SyncContentServerResponse, SyncContentServerData } from '@shared/back/types';
 import { autoCode, LangContainer, LangFile } from '@shared/lang';
 import { memoizeOne } from '@shared/memoize';
 import { updatePreferencesData } from '@shared/preferences/util';
@@ -13,6 +14,8 @@ import { ConfigFlashpointPathInput } from '../ConfigFlashpointPathInput';
 import { Dropdown } from '../Dropdown';
 import { DropdownInputField } from '../DropdownInputField';
 import { InputField } from '../InputField';
+import { SimpleButton } from '../SimpleButton';
+import { deepCopy } from '@shared/Util';
 
 type OwnProps = {
   /** List of all platforms */
@@ -26,7 +29,7 @@ type OwnProps = {
   localeCode: string;
 };
 
-export type ConfigPageProps = OwnProps & WithPreferencesProps;
+export type ConfigPageProps = OwnProps & WithPreferencesProps & WithContentServersProps;
 
 type ConfigPageState = {
   /** If the currently entered Flashpoint path points to a "valid" Flashpoint folder (it exists and "looks" like a Flashpoint folder). */
@@ -41,6 +44,8 @@ type ConfigPageState = {
   nativePlatforms: string[];
   /** Current Server */
   server: string;
+  /** New Content Server */
+  contentServer: string;
 };
 
 export interface ConfigPage {
@@ -66,7 +71,8 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
       metadataServerHost: configData.metadataServerHost,
       useCustomTitlebar: configData.useCustomTitlebar,
       nativePlatforms: configData.nativePlatforms,
-      server: configData.server
+      server: configData.server,
+      contentServer: ''
     };
   }
 
@@ -185,6 +191,30 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
                 </div>
                 <div className='setting__row__bottom'>
                   <p>{strings.flashpointPathDesc}</p>
+                </div>
+              </div>
+              {/* Content Servers */}
+              <div className='setting__row'>
+                <div className='setting__row__top'>
+                  <div className='setting__row__title'>
+                    <p>{strings.contentServers}</p>
+                  </div>
+                  <div className='setting__row__content setting__row__content--toggle'>
+                    <div>
+                      <input
+                        value={this.state.contentServer}
+                        onChange={(event) => this.setState({ contentServer: event.target.value })} />
+                      <SimpleButton
+                        onClick={this.onAddContentServer}
+                        value={strings.addContentServer} />
+                    </div>
+                    { this.props.contentServers.map(cs => (
+                      <div key={cs.id}>{cs.host} - {cs.gameCount} Games Served</div>
+                    ))}
+                  </div>
+                </div>
+                <div className='setting__row__bottom'>
+                  <p>{strings.contentServersDesc}</p>
                 </div>
               </div>
               {/* Native Platforms */}
@@ -433,6 +463,22 @@ export class ConfigPage extends React.Component<ConfigPageProps, ConfigPageState
     // Check if the file-path points at a valid FlashPoint folder
     const isValid = await isFlashpointValidCheck(filePath);
     this.setState({ isFlashpointPathValid: isValid });
+  }
+
+  onAddContentServer = async (): Promise<void> => {
+    const res = await window.Shared.back.sendP<SyncContentServerResponse, SyncContentServerData>(BackIn.SYNC_CONTENT_SERVER, {
+      host: this.state.contentServer
+    });
+    if (res.data && res.data.server) {
+      const newServer = res.data.server;
+      const newContentServers = deepCopy(this.props.contentServers);
+      const oldServerIndex = newContentServers.findIndex(cs => cs.host === newServer.host);
+      if (oldServerIndex > -1) {
+        newContentServers.splice(oldServerIndex, 1);
+      }
+      newContentServers.push(res.data.server);
+      this.props.setContentServers(newContentServers);
+    }
   }
 
   onUseCustomTitlebarChange = (isChecked: boolean): void => {

@@ -1,4 +1,5 @@
 import { AdditionalApp } from '@database/entity/AdditionalApp';
+import { ContentServer } from '@database/entity/ContentServer';
 import { Game } from '@database/entity/Game';
 import { Playlist } from '@database/entity/Playlist';
 import { PlaylistGame } from '@database/entity/PlaylistGame';
@@ -34,6 +35,7 @@ import { BackState, ImageDownloadItem } from './types';
 import { EventQueue } from './util/EventQueue';
 import { FolderWatcher } from './util/FolderWatcher';
 import { createContainer, exit, log, procToService } from './util/misc';
+import { Content } from '@database/entity/Content';
 
 // Make sure the process.send function is available
 type Required<T> = T extends undefined ? never : T;
@@ -46,6 +48,7 @@ const CONCURRENT_IMAGE_DOWNLOADS = 6;
 const state: BackState = {
   isInit: false,
   isExit: false,
+  isDev: false,
   socketServer: new SocketServer(),
   fileServer: new http.Server(onFileServerRequest),
   fileServerPort: -1,
@@ -97,6 +100,7 @@ async function onProcessMessage(message: any, sendHandle: any): Promise<void> {
   state.isInit = true;
 
   const content: BackInitArgs = JSON.parse(message);
+  state.isDev = content.isDev;
   state.configFolder = content.configFolder;
   state.localeCode = content.localeCode;
   state.exePath = content.exePath;
@@ -116,11 +120,13 @@ async function onProcessMessage(message: any, sendHandle: any): Promise<void> {
     const options: ConnectionOptions = {
       type: 'sqlite',
       database: path.join(state.config.flashpointPath, 'Data', 'flashpoint.sqlite'),
-      entities: [Game, AdditionalApp, Playlist, PlaylistGame, Tag, TagAlias, TagCategory],
+      entities: [Game, AdditionalApp, Playlist, PlaylistGame, Tag, TagAlias, TagCategory, ContentServer, Content],
       migrations: [Initial1583180635980]
     };
     state.connection = await createConnection(options);
     state.connection.synchronize();
+    // Disable foreign key constraints
+    state.connection.query('PRAGMA foreign_keys=OFF;');
   }
 
   // Init services

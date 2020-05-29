@@ -11,7 +11,7 @@ import { VIEW_PAGE_SIZE } from '@shared/constants';
 import { FilterGameOpts } from '@shared/game/GameFilter';
 import { GameOrderBy, GameOrderReverse } from '@shared/order/interfaces';
 import { Coerce } from '@shared/utils/Coerce';
-import { Brackets, FindOneOptions, getManager, SelectQueryBuilder } from 'typeorm';
+import { Brackets, FindOneOptions, getManager, SelectQueryBuilder, FindManyOptions } from 'typeorm';
 
 const exactFields = [ 'broken', 'extreme', 'library' ];
 enum flatGameFields {
@@ -180,6 +180,11 @@ export namespace GameManager {
     }
 
     return rangesOut;
+  }
+
+  export async function findGamesByIds(gameIds: string[], opts?: FindManyOptions<Game>): Promise<Game[]> {
+    const gameRepository = getManager().getRepository(Game);
+    return gameRepository.findByIds(gameIds, opts);
   }
 
   async function getGameQuery(

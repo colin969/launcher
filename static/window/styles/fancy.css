@@ -110,6 +110,14 @@
   --layout__header-menu-item-hover-border: #d33682;
   /* Splash Screen */
   --layout__splash-screen_loading:                 #eb4b4b;
+  /* Install State */
+  --layout__state-playable:                        #006600;
+  --layout__state-playable-hover:                  #0ea800;
+  --layout__state-installable:                     #e48900;
+  --layout__state-installable-hover:               #ff9900;
+  --layout__state-downloadable:                    #008bdb;
+  --layout__state-downloadable-hover:              #00ccff;
+  --layout__state-unavailable:                     #696969;
   /* Misc */
   --layout__title-bar-cross-color:                 #eb4b4b;
   --layout__no-theme-suggestion-color:             #bfbfbf;
@@ -939,4 +947,38 @@ body {
 }
 .sketch-picker input {
   background-color: var(--layout__quaternary-background);
+}
+
+.play-button {
+
+}
+.play-button__dropdown-content {
+  background-color: var(--layout__tertiary-background);
+}
+.play-button__dropdown-content:hover {
+  background-color: var(--layout__secondary-background);
+}
+.play-button__playable {
+  background-color: var(--layout__state-playable);
+}
+.play-button__playable:hover {
+  background-color: var(--layout__state-playable-hover);
+}
+
+.play-button__installable {
+  background-color: var(--layout__state-installable);
+}
+.play-button__installable:hover {
+  background-color: var(--layout__state-installable-hover);
+}
+
+.play-button__downloadable {
+  background-color: var(--layout__state-downloadable);
+}
+.play-button__downloadable:hover {
+  background-color: var(--layout__state-downloadable-hover);
+}
+
+.play-button__unavailable {
+  background-color: var(--layout__state-unavailable);
 }

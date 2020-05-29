@@ -24,6 +24,9 @@ const langTemplate = {
     'flashpointHeader',
     'flashpointPath',
     'flashpointPathDesc',
+    'contentServers',
+    'contentServersDesc',
+    'addContentServer',
     'redirector',
     'redirectorFiddler',
     'redirectorDesc',
@@ -265,6 +268,14 @@ const langTemplate = {
     'searching',
     'library',
     'defaultLibrary',
+    'statePlay',
+    'playable',
+    'installable',
+    'downloadable',
+    'unavailable',
+    'uninstallGame',
+    'deleteInstaller',
+    'makeCuration'
   ] as const,
   tags: [
     'noName',
@@ -427,7 +438,8 @@ const langTemplate = {
     'areYouSure',
     'cancel',
     'mergePlaylists',
-    'newPlaylist'
+    'newPlaylist',
+    'noDownloadsAvailable'
   ] as const,
   // libraries: [], // (This is dynamically populated in run-time)
 } as const;

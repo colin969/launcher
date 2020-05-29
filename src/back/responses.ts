@@ -1,7 +1,8 @@
 import { Game } from '@database/entity/Game';
 import { Tag } from '@database/entity/Tag';
 import { TagAlias } from '@database/entity/TagAlias';
-import { AddLogData, BackIn, BackInit, BackOut, BrowseChangeData, BrowseViewIndexData, BrowseViewIndexResponse, BrowseViewKeysetData, BrowseViewKeysetResponse, BrowseViewPageData, BrowseViewPageResponseData, DeleteGameData, DeleteImageData, DeletePlaylistData, DeletePlaylistGameData, DeletePlaylistGameResponse, DeletePlaylistResponse, DuplicateGameData, DuplicatePlaylistData, ExportGameData, ExportMetaEditData, ExportPlaylistData, GameMetadataSyncResponse, GetAllGamesResponseData, GetExecData, GetGameData, GetGameResponseData, GetGamesTotalResponseData, GetMainInitDataResponse, GetPlaylistData, GetPlaylistGameData, GetPlaylistGameResponse, GetPlaylistResponse, GetPlaylistsResponse, GetRendererInitDataResponse, GetSuggestionsResponseData, ImageChangeData, ImportCurationData, ImportCurationResponseData, ImportMetaEditResponseData, ImportMetaEditResult, ImportPlaylistData, InitEventData, LanguageChangeData, LaunchAddAppData, LaunchCurationAddAppData, LaunchCurationData, LaunchGameData, LocaleUpdateData, MergeTagData, PlaylistsChangeData, RandomGamesData, RandomGamesResponseData, SaveGameData, SaveImageData, SaveLegacyPlatformData as SaveLegacyPlatformData, SavePlaylistData, SavePlaylistGameData, SavePlaylistGameResponse, SavePlaylistResponse, ServiceActionData, SetLocaleData, TagByIdData, TagByIdResponse, TagCategoryByIdData, TagCategoryByIdResponse, TagCategoryDeleteData, TagCategoryDeleteResponse, TagCategorySaveData, TagCategorySaveResponse, TagDeleteData, TagDeleteResponse, TagFindData, TagFindResponse, TagGetData, TagGetOrCreateData, TagGetResponse, TagPrimaryFixData, TagPrimaryFixResponse, TagSaveData, TagSaveResponse, TagSuggestionsData, TagSuggestionsResponse, UpdateConfigData } from '@shared/back/types';
+import { InstallState } from '@database/entity/types';
+import { AddLogData, BackIn, BackInit, BackOut, BrowseChangeData, BrowseViewIndexData, SyncContentServerResponse, BrowseViewIndexResponse, BrowseViewKeysetData, BrowseViewKeysetResponse, BrowseViewPageData, BrowseViewPageResponseData, DeleteGameData, DeleteImageData, DeletePlaylistData, DeletePlaylistGameData, DeletePlaylistGameResponse, DeletePlaylistResponse, DuplicateGameData, DuplicatePlaylistData, ExportGameData, ExportMetaEditData, ExportPlaylistData, GameInstallChangeData, GameInstallChangeResponse, GameMetadataSyncResponse, GetAllGamesResponseData, GetExecData, GetGameData, GetGameResponseData, GetGamesTotalResponseData, GetMainInitDataResponse, GetPlaylistData, GetPlaylistGameData, GetPlaylistGameResponse, GetPlaylistResponse, GetPlaylistsResponse, GetRendererInitDataResponse, GetSuggestionsResponseData, ImageChangeData, ImportCurationData, ImportCurationResponseData, ImportMetaEditResponseData, ImportMetaEditResult, ImportPlaylistData, InitEventData, LanguageChangeData, LaunchAddAppData, LaunchCurationAddAppData, LaunchCurationData, LaunchGameData, LocaleUpdateData, MergeTagData, PlaylistsChangeData, RandomGamesData, RandomGamesResponseData, SaveGameData, SaveImageData, SaveLegacyPlatformData as SaveLegacyPlatformData, SavePlaylistData, SavePlaylistGameData, SavePlaylistGameResponse, SavePlaylistResponse, ServiceActionData, SetLocaleData, SyncContentServerData, TagByIdData, TagByIdResponse, TagCategoryByIdData, TagCategoryByIdResponse, TagCategoryDeleteData, TagCategoryDeleteResponse, TagCategorySaveData, TagCategorySaveResponse, TagDeleteData, TagDeleteResponse, TagFindData, TagFindResponse, TagGetData, TagGetOrCreateData, TagGetResponse, TagPrimaryFixData, TagPrimaryFixResponse, TagSaveData, TagSaveResponse, TagSuggestionsData, TagSuggestionsResponse, UpdateConfigData } from '@shared/back/types';
 import { overwriteConfigData } from '@shared/config/util';
 import { LOGOS, SCREENSHOTS } from '@shared/constants';
 import { stringifyCurationFormat } from '@shared/curate/format/stringifier';
@@ -18,6 +19,7 @@ import * as path from 'path';
 import * as util from 'util';
 import { ConfigFile } from './ConfigFile';
 import { CONFIG_FILENAME, PREFERENCES_FILENAME } from './constants';
+import { DownloadManager } from './game/DownloadManager';
 import { GameManager } from './game/GameManager';
 import { TagManager } from './game/TagManager';
 import { GameLauncher } from './GameLauncher';
@@ -26,10 +28,16 @@ import { MetadataServerApi, SyncableGames } from './MetadataServerApi';
 import { parseMetaEdit } from './MetaEdit';
 import { respond } from './SocketServer';
 import { BackState } from './types';
-import { copyError, createAddAppFromLegacy, createContainer, createGameFromLegacy, createPlaylist, ErrorCopy, exit, log, pathExists, procToService } from './util/misc';
+import { copyError, createAddAppFromLegacy, createContainer, createGameFromLegacy, createPlaylist, ErrorCopy, exit, log, pathExists, procToService, chunkArray } from './util/misc';
 import { sanitizeFilename } from './util/sanitizeFilename';
 import { uuid } from './util/uuid';
+import * as axiosImport from 'axios';
+import * as url from 'url';
+import { Content } from '@database/entity/Content';
+import { Coerce } from '@shared/utils/Coerce';
 
+const { str } = Coerce;
+const axios = axiosImport.default;
 const copyFile  = util.promisify(fs.copyFile);
 const readdir   = util.promisify(fs.readdir);
 const stat      = util.promisify(fs.stat);
@@ -91,7 +99,8 @@ export function registerRequestCallbacks(state: BackState): void {
         serverNames: serverNames,
         platforms: platforms,
         localeCode: state.localeCode,
-        tagCategories: await TagManager.findTagCategories()
+        tagCategories: await TagManager.findTagCategories(),
+        contentServers: await DownloadManager.getContentServers()
       },
     });
   });
@@ -336,7 +345,8 @@ export function registerRequestCallbacks(state: BackState): void {
       const rawData = await fs.promises.readFile(req.data, 'utf-8');
       const jsonData = JSON.parse(rawData);
       const newPlaylist = createPlaylist(jsonData);
-      const existingPlaylist = await GameManager.findPlaylist(jsonData['id'], true);
+      if (newPlaylist.id === '') { newPlaylist.id = uuid(); }
+      const existingPlaylist = await GameManager.findPlaylist(newPlaylist.id, true);
       if (existingPlaylist) {
         // Conflict, resolve with user
         const dialogFunc = state.socketServer.openDialog(event.target);
@@ -513,6 +523,98 @@ export function registerRequestCallbacks(state: BackState): void {
         library: req.data.library,
       },
     });
+  });
+
+  state.socketServer.register<GameInstallChangeData>(BackIn.INSTALLSTATE_GAME, async (event, req) => {
+    const { id, newState } = req.data;
+    const game = await GameManager.findGame(id);
+    if (game && game.installState !== newState) {
+      const curState = game.installState;
+      // Game found, process state change
+      // Special Cases
+      if (curState === InstallState.LEGACY) {
+        game.installState = newState;
+        return;
+      }
+      // Up or Down
+      if (curState < newState) {
+        // Progression
+        if (curState === InstallState.NOINSTALLER && game.content.length > 0) {
+          // Download content
+          const content = game.content[0];
+          await fs.promises.mkdir(path.join(state.config.flashpointPath, state.config.gameArchiveFolderPath), { recursive: true });
+          const gamePath = path.join(state.config.flashpointPath, state.config.gameArchiveFolderPath, game.id + '.7z');
+          const downloadUrl = url.format(content.downloadPath);
+          console.log(downloadUrl);
+          const fileWriter = fs.createWriteStream(gamePath);
+          const res = await axios.get(downloadUrl, { responseType: 'stream' });
+          if (res.status === 200) {
+            res.data.pipe(fileWriter);
+            await new Promise<void>((resolve, reject) => {
+              fileWriter.on('finish', resolve);
+              fileWriter.on('error', reject);
+            });
+            game.contentUsed = content;
+            game.installState = InstallState.DOWNLOADED;
+          }
+        }
+        if (newState === InstallState.PLAYABLE) {
+          // Install content
+          try {
+            await DownloadManager.installGame({
+              config: state.config,
+              gameId: game.id,
+              isDev: state.isDev,
+              openDialog: state.socketServer.openDialog(event.target)
+            });
+            game.installState = InstallState.PLAYABLE;
+          } catch (error) {
+            log(state, {
+              source: 'Launcher',
+              content: `Error installing game - ${game.id}\n\t${error}`,
+            });
+            return;
+          }
+        }
+      } else {
+        // Regression
+        if (curState === InstallState.PLAYABLE) {
+          // Uninstall content
+          game.installState = InstallState.DOWNLOADED;
+        }
+        if (newState === InstallState.NOINSTALLER) {
+          // Delete content
+          let confirmed = true;
+          if (game.content.length === 0) {
+            const res = await (state.socketServer.openDialog(event.target))({
+              title: state.languageContainer.dialog.areYouSure,
+              message: state.languageContainer.dialog.noDownloadsAvailable,
+              buttons: ['Yes', 'No', 'Cancel']
+            });
+            confirmed = res === 0 ? true : false;
+          }
+          if (confirmed) {
+            const gamePath = path.join(state.config.flashpointPath, state.config.gameArchiveFolderPath, game.id + '.7z');
+            await fs.promises.stat(gamePath)
+              .then((stats) => {
+                if (stats.isFile()) {
+                  return fs.promises.unlink(gamePath);
+                }
+              });
+            game.installState = InstallState.NOINSTALLER;
+          }
+        }
+      }
+      await GameManager.updateGame(game);
+      respond<GameInstallChangeResponse>(event.target, {
+        id: req.id,
+        type: BackOut.INSTALLSTATE_GAME,
+        data: {
+          id: game.id,
+          newState: game.installState
+        }
+      });
+    }
   });
 
   state.socketServer.register<TagCategoryDeleteData>(BackIn.DELETE_TAG_CATEGORY, async (event, req) => {
@@ -920,9 +1022,11 @@ export function registerRequestCallbacks(state: BackState): void {
         saveCuration: req.data.saveCuration,
         fpPath: state.config.flashpointPath,
         imageFolderPath: state.config.imageFolderPath,
+        gameArchiveFolderPath: state.config.gameArchiveFolderPath,
         openDialog: state.socketServer.openDialog(event.target),
         openExternal: state.socketServer.openExternal(event.target),
-        tagCategories: await TagManager.findTagCategories()
+        tagCategories: await TagManager.findTagCategories(),
+        isDev: state.isDev
       });
       state.queries = {};
     } catch (e) {
@@ -987,6 +1091,41 @@ export function registerRequestCallbacks(state: BackState): void {
       id: req.id,
       type: BackOut.GENERIC_RESPONSE,
       data: undefined,
+    });
+  });
+
+  state.socketServer.register<SyncContentServerData>(BackIn.SYNC_CONTENT_SERVER, async (event, req) => {
+    const indexHost = url.resolve(req.data.host, 'index.json');
+    const response = await axios.get(indexHost);
+    const cleanHost = url.format(req.data.host);
+    let contentServer = undefined;
+    try {
+      contentServer = await DownloadManager.getOrCreateContentServer(cleanHost);
+      if (contentServer) {
+        const content: Content[] = [];
+        for (let key of Object.keys(response.data)) {
+          const obj = response.data[key];
+          content.push({
+            gameId: str(obj.gameId),
+            downloadPath: url.resolve(cleanHost, key),
+            hash: str(obj.SHA256),
+            size: obj.size || 0
+          });
+        }
+        contentServer.content = content;
+        contentServer.gameCount = content.length;
+        contentServer = await DownloadManager.saveContentServer(contentServer);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    respond<SyncContentServerResponse>(event.target, {
+      id: req.id,
+      type: BackOut.SYNC_CONTENT_SERVER,
+      data: {
+        server: contentServer
+      }
     });
   });
 

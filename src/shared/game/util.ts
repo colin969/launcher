@@ -1,5 +1,6 @@
 import { AdditionalApp } from '../../database/entity/AdditionalApp';
 import { Game } from '../../database/entity/Game';
+import { InstallState } from '@database/entity/types';
 
 export namespace ModelUtils {
   export function createGame(): Game {
@@ -29,6 +30,8 @@ export namespace ModelUtils {
       library: '',
       orderTitle: '',
       addApps: [],
+      content: [],
+      installState: InstallState.LEGACY,
       placeholder: false
     };
   }
