@@ -1,3 +1,4 @@
+import { uuid } from '@renderer/util/uuid';
 import { AddLogData, BackIn } from '@shared/back/types';
 import { GameMetaDefaults } from '@shared/curate/defaultValues';
 import { parseCurationMetaNew, parseCurationMetaOld, ParsedCurationMeta } from '@shared/curate/parse';
@@ -32,13 +33,13 @@ export async function createCurationImage(filePath: string): Promise<CurationInd
 export async function readCurationMeta(filePath: string, defaultMetaData?: GameMetaDefaults): Promise<ParsedCurationMeta> {
   const metaFileData = await readFile(filePath);
   if (filePath.toLowerCase().endsWith('.txt')) {
-    const parsedMeta = await parseCurationMetaOld(stripBOM(metaFileData.toString()));
+    const parsedMeta = await parseCurationMetaOld(stripBOM(metaFileData.toString()), uuid);
     setGameMetaDefaults(parsedMeta.game, defaultMetaData);
     return parsedMeta;
   } else if (filePath.toLowerCase().endsWith('.yaml') || filePath.toLowerCase().endsWith('.yml')) {
     // Will fail to call during parseCurationMetaNew for some reason?
     const rawMeta = YAML.parse(stripBOM(metaFileData.toString()));
-    const parsedMeta = await parseCurationMetaNew(rawMeta);
+    const parsedMeta = await parseCurationMetaNew(rawMeta, uuid);
     setGameMetaDefaults(parsedMeta.game, defaultMetaData);
     return parsedMeta;
   } else {

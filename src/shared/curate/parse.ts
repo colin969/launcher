@@ -1,11 +1,10 @@
 import { Coerce } from '@shared/utils/Coerce';
+import { validateSemiUUID } from '@shared/utils/uuid';
 import { IObjectParserProp, ObjectParser } from '../utils/ObjectParser';
 import { CurationFormatObject, parseCurationFormat } from './format/parser';
 import { CFTokenizer, tokenizeCurationFormat } from './format/tokenizer';
 import { EditAddAppCurationMeta, EditCurationMeta } from './types';
 import { getTagsFromStr } from './util';
-import { validateSemiUUID } from '@shared/utils/uuid';
-import uuid = require('uuid');
 
 const { str } = Coerce;
 
@@ -21,24 +20,24 @@ export type ParsedCurationMeta = {
  * Parse a string containing meta for an old style curation
  * @param text A string of curation meta.
  */
-export async function parseCurationMetaOld(text: string): Promise<ParsedCurationMeta> {
+export async function parseCurationMetaOld(text: string, uuid: () => string): Promise<ParsedCurationMeta> {
   // Try parsing the meta text
   let tokens: CFTokenizer.AnyToken[] | undefined = undefined;
   let rawMeta: CurationFormatObject | undefined = undefined;
   tokens = tokenizeCurationFormat(text);
   rawMeta = parseCurationFormat(tokens);
   // Convert the raw meta to a programmer friendly object
-  return await convertMeta(rawMeta);
+  return await convertMeta(rawMeta, uuid);
 }
 
 /**
  * Parse a string containing meta for an new style (YAML) curation
  * @param text A string of curation meta.
  */
-export async function parseCurationMetaNew(rawMeta: any): Promise<ParsedCurationMeta> {
+export async function parseCurationMetaNew(rawMeta: any, uuid: () => string): Promise<ParsedCurationMeta> {
   // Try parsing yaml file
   // Convert raw meta into a ParsedCurationMeta object
-  return await convertMeta(rawMeta);
+  return await convertMeta(rawMeta, uuid);
 }
 
 /**
@@ -46,7 +45,7 @@ export async function parseCurationMetaNew(rawMeta: any): Promise<ParsedCuration
  * @param data "Raw" meta object to convert.
  * @param onError Called whenever an error occurs.
  */
-export async function convertMeta(data: any, onError?: (error: string) => void): Promise<ParsedCurationMeta> {
+export async function convertMeta(data: any, uuid: () => string, onError?: (error: string) => void): Promise<ParsedCurationMeta> {
   // Default parsed data
   const parsed: ParsedCurationMeta = {
     game: { id: uuid() },
