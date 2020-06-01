@@ -1022,6 +1022,7 @@ export function registerRequestCallbacks(state: BackState): void {
         date: (req.data.date !== undefined) ? new Date(req.data.date) : undefined,
         saveCuration: req.data.saveCuration,
         fpPath: state.config.flashpointPath,
+        exePath: state.exePath,
         imageFolderPath: state.config.imageFolderPath,
         gameArchiveFolderPath: state.config.gameArchiveFolderPath,
         openDialog: state.socketServer.openDialog(event.target),

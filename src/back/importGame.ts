@@ -1,9 +1,9 @@
+import { get7zExec } from '@back/util/SevenZip';
 import { AdditionalApp } from '@database/entity/AdditionalApp';
 import { Game } from '@database/entity/Game';
 import { Tag } from '@database/entity/Tag';
 import { TagCategory } from '@database/entity/TagCategory';
 import { InstallState } from '@database/entity/types';
-import { get7zExec } from '@renderer/util/SevenZip';
 import { htdocsPath, LOGOS, SCREENSHOTS } from '@shared/constants';
 import { convertEditToCurationMeta } from '@shared/curate/metaToMeta';
 import { CurationIndexImage, EditAddAppCuration, EditAddAppCurationMeta, EditCuration, EditCurationMeta } from '@shared/curate/types';
@@ -11,13 +11,13 @@ import { getCurationFolder, indexContentFolder } from '@shared/curate/util';
 import { sizeToString } from '@shared/Util';
 import { Coerce } from '@shared/utils/Coerce';
 import { exec } from 'child_process';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import { copy, pathExists } from 'fs-extra';
 import { add } from 'node-7z';
 import * as path from 'path';
 import { promisify } from 'util';
 import * as YAML from 'yaml';
-import * as crypto from 'crypto';
 import { GameManager } from './game/GameManager';
 import { TagManager } from './game/TagManager';
 import { GameManagerState } from './game/types';
@@ -44,6 +44,7 @@ type ImportCurationOpts = {
   date?: Date;
   saveCuration: boolean;
   fpPath: string;
+  exePath: string;
   imageFolderPath: string;
   gameArchiveFolderPath: string;
   openDialog: OpenDialogFunc;
@@ -64,6 +65,7 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
     date,
     saveCuration,
     fpPath,
+    exePath,
     imageFolderPath: imagePath,
     gameArchiveFolderPath,
     isDev
@@ -149,7 +151,7 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
   const archivePath = path.join(gameArchiveFullPath, gameId + '.7z');
   const archiveStream = add(archivePath, path.join(getCurationFolder(curation, fpPath), '*'), {
     recursive: true,
-    $bin: get7zExec(isDev)
+    $bin: get7zExec(isDev, exePath)
   });
 
   return new Promise<void>((resolve, reject) => {
