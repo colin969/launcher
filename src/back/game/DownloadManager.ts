@@ -1,9 +1,8 @@
 import { copyFolder } from '@back/importGame';
 import { OpenDialogFunc } from '@back/types';
 import { pathExists } from '@back/util/misc';
-import { Content } from '@database/entity/Content';
+import { get7zExec } from '@back/util/SevenZip';
 import { ContentServer } from '@database/entity/ContentServer';
-import { get7zExec } from '@renderer/util/SevenZip';
 import { IAppConfigData } from '@shared/config/interfaces';
 import * as fs from 'fs-extra';
 import { extractFull } from 'node-7z';
@@ -14,6 +13,7 @@ export type InstallGameOpts = {
   config: IAppConfigData;
   gameId: string;
   isDev: boolean;
+  exePath: string;
   openDialog: OpenDialogFunc;
 }
 
@@ -45,7 +45,7 @@ export namespace DownloadManager {
   }
 
   export async function installGame(opts: InstallGameOpts) {
-    const { config, gameId, isDev, openDialog } = opts;
+    const { config, gameId, isDev, exePath, openDialog } = opts;
     const gameArchive = path.join(config.flashpointPath, config.gameArchiveFolderPath, gameId + '.7z');
     const tempFolder = path.join(config.flashpointPath, config.gameArchiveFolderPath, gameId!);
     const gameFolder = path.join(config.flashpointPath, 'Server', 'htdocs');
@@ -59,7 +59,7 @@ export namespace DownloadManager {
     return new Promise<void>((resolve, reject) => {
       // Extract the game archive
       const extractStream = extractFull(gameArchive, tempFolder, {
-        $bin: get7zExec(isDev)
+        $bin: get7zExec(isDev, exePath)
       });
 
       extractStream.on('error', () => {

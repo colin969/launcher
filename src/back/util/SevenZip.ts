@@ -1,8 +1,7 @@
-import { remote } from 'electron';
 import * as path from 'path';
 
-export function get7zExec(): string {
-  const basePath = window && window.Shared.isDev ? process.cwd() : path.dirname(remote.app.getPath('exe'));
+export function get7zExec(isDev: boolean, exePath: string): string {
+  const basePath = isDev ? process.cwd() : path.dirname(exePath);
   switch (process.platform) {
     case 'darwin':
       return path.join(basePath, 'extern/7zip-bin/mac', '7za');
