@@ -1,4 +1,5 @@
 import { AdditionalApp } from '@database/entity/AdditionalApp';
+import { Content } from '@database/entity/Content';
 import { ContentServer } from '@database/entity/ContentServer';
 import { Game } from '@database/entity/Game';
 import { Playlist } from '@database/entity/Playlist';
@@ -35,7 +36,6 @@ import { BackState, ImageDownloadItem } from './types';
 import { EventQueue } from './util/EventQueue';
 import { FolderWatcher } from './util/FolderWatcher';
 import { createContainer, exit, log, procToService } from './util/misc';
-import { Content } from '@database/entity/Content';
 
 // Make sure the process.send function is available
 type Required<T> = T extends undefined ? never : T;
@@ -207,7 +207,7 @@ async function onProcessMessage(message: any, sendHandle: any): Promise<void> {
     }
   });
   state.languageWatcher.on('error', console.error);
-  const langFolder = path.join(content.isDev ? process.cwd() : content.exePath, 'lang');
+  const langFolder = path.join(content.isDev ? process.cwd() : path.dirname(state.exePath), 'lang');
   fs.stat(langFolder, (error) => {
     if (!error) { state.languageWatcher.watch(langFolder); }
     else {

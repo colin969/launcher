@@ -62,9 +62,9 @@ export namespace DownloadManager {
         $bin: get7zExec(isDev, exePath)
       });
 
-      extractStream.on('error', () => {
+      extractStream.on('error', (err) => {
         // TODO Warn user
-        reject('Error extracting files.');
+        reject('Error extracting files.\n' + err.stack);
       });
       extractStream.on('end', () => {
         copyFolder(path.join(tempFolder, 'content'), gameFolder, true, openDialog, undefined,true)
