@@ -330,7 +330,7 @@ body {
 
 
 /* ------ Header ------ */
-.header {
+.header__outer {
   background-color: var(--layout__secondary-background);
 }
 .header__menu__item__link {
@@ -512,6 +512,14 @@ body {
 /* Dropdown */
 .log-page__dropdown-item:hover {
   background-color: var(--layout__drop-down-content-background-selected);
+}
+
+/* ---- Adv Search ---- */
+.adv-search {
+  background-color: var(--layout__secondary-background);
+}
+.adv-search__box {
+  background-color: var(--layout__tertiary-background);
 }
 
 

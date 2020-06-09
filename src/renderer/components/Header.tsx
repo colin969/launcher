@@ -1,7 +1,8 @@
-import * as React from 'react';
-import { Link, RouteComponentProps } from 'react-router-dom';
+import { WithSearchProps } from '@renderer/containers/withSearch';
 import { LangContainer } from '@shared/lang';
 import { getLibraryItemTitle } from '@shared/library/util';
+import * as React from 'react';
+import { Link, RouteComponentProps } from 'react-router-dom';
 import { WithPreferencesProps } from '../containers/withPreferences';
 import { Paths } from '../Paths';
 import { SearchQuery } from '../store/search';
@@ -9,16 +10,13 @@ import { easterEgg, joinLibraryRoute } from '../Util';
 import { LangContext } from '../util/lang';
 import { GameOrder, GameOrderChangeEvent } from './GameOrder';
 import { OpenIcon } from './OpenIcon';
+import { AdvSearchPanel } from './AdvSearchPanel';
 
 type OwnProps = {
-  /** The most recent search query. */
-  searchQuery: SearchQuery;
   /** The current parameters for ordering games. */
   order: GameOrderChangeEvent;
   /** Array of library routes */
   libraries: string[];
-  /** Called when a search is made. */
-  onSearch: (text: string, redirect: boolean) => void;
   /** Called when any of the ordering parameters are changed (by the header or a sub-component). */
   onOrderChange?: (event: GameOrderChangeEvent) => void;
   /** Called when the left sidebar toggle button is clicked. */
@@ -27,7 +25,7 @@ type OwnProps = {
   onToggleRightSidebarClick?: () => void;
 };
 
-export type HeaderProps = OwnProps & RouteComponentProps & WithPreferencesProps;
+export type HeaderProps = OwnProps & RouteComponentProps & WithPreferencesProps & WithSearchProps;
 
 type HeaderState = {
   /** Current text in the search field. */
@@ -74,107 +72,116 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
     } = this.props;
     const { searchText } = this.state;
     return (
-      <div className='header'>
-        {/* Header Menu */}
-        <div className='header__wrap'>
-          <ul className='header__menu'>
-            <MenuItem title={strings.home} link={Paths.HOME} />
-            { libraries.length > 0 ? (
-              libraries.map(library => (
+      <div className='header__outer'>
+        <div className='header__inner'>
+          {/* Header Menu */}
+          <div className='header__wrap'>
+            <ul className='header__menu'>
+              <MenuItem title={strings.home} link={Paths.HOME} />
+              { libraries.length > 0 ? (
+                libraries.map(library => (
+                  <MenuItem
+                    key={library}
+                    title={getLibraryItemTitle(library, this.context.libraries)}
+                    link={joinLibraryRoute(library)} />
+                ))
+              ) : (
                 <MenuItem
-                  key={library}
-                  title={getLibraryItemTitle(library, this.context.libraries)}
-                  link={joinLibraryRoute(library)} />
-              ))
-            ) : (
+                  title={strings.browse}
+                  link={Paths.BROWSE} />
+              ) }
+              { enableEditing ? (
+                <>
+                  <MenuItem
+                    title={strings.tags}
+                    link={Paths.TAGS} />
+                  <MenuItem
+                    title={strings.categories}
+                    link={Paths.CATEGORIES} />
+                </>
+              ) : undefined }
               <MenuItem
-                title={strings.browse}
-                link={Paths.BROWSE} />
-            ) }
-            { enableEditing ? (
-              <>
+                title={strings.logs}
+                link={Paths.LOGS} />
+              <MenuItem
+                title={strings.config}
+                link={Paths.CONFIG} />
+              <MenuItem
+                title={strings.about}
+                link={Paths.ABOUT} />
+              { enableEditing ? (
                 <MenuItem
-                  title={strings.tags}
-                  link={Paths.TAGS} />
+                  title={strings.curate}
+                  link={Paths.CURATE} />
+              ) : undefined }
+              { showDeveloperTab ? (
                 <MenuItem
-                  title={strings.categories}
-                  link={Paths.CATEGORIES} />
-              </>
-            ) : undefined }
-            <MenuItem
-              title={strings.logs}
-              link={Paths.LOGS} />
-            <MenuItem
-              title={strings.config}
-              link={Paths.CONFIG} />
-            <MenuItem
-              title={strings.about}
-              link={Paths.ABOUT} />
-            { enableEditing ? (
-              <MenuItem
-                title={strings.curate}
-                link={Paths.CURATE} />
-            ) : undefined }
-            { showDeveloperTab ? (
-              <MenuItem
-                title={strings.developer}
-                link={Paths.DEVELOPER} />
-            ) : undefined }
-          </ul>
-        </div>
-        {/* Header Search */}
-        <div className='header__wrap header__wrap--width-restricted header__search__wrap'>
-          <div>
-            <div className='header__search'>
-              <div className='header__search__left'>
-                <input
-                  className='header__search__input'
-                  ref={this.searchInputRef}
-                  value={searchText}
-                  placeholder={strings.searchPlaceholder}
-                  onChange={this.onSearchChange}
-                  onKeyDown={this.onSearchKeyDown} />
-              </div>
-              <div
-                className='header__search__right'
-                onClick={ searchText ? this.onClearClick : undefined }>
-                <div className='header__search__right__inner'>
-                  <OpenIcon
-                    className='header__search__icon'
-                    icon={ searchText ? 'circle-x' : 'magnifying-glass' } />
+                  title={strings.developer}
+                  link={Paths.DEVELOPER} />
+              ) : undefined }
+            </ul>
+          </div>
+          {/* Header Search */}
+          <div className='header__wrap header__wrap--width-restricted header__search__wrap'>
+            <div>
+              <div className='header__search'>
+                <div className='header__search__left'>
+                  <input
+                    className='header__search__input'
+                    ref={this.searchInputRef}
+                    value={searchText}
+                    placeholder={strings.searchPlaceholder}
+                    onChange={this.onSearchChange}
+                    onKeyDown={this.onSearchKeyDown} />
+                </div>
+                <div
+                  className='header__search__right'
+                  onClick={ searchText ? this.onClearClick : undefined }>
+                  <div className='header__search__right__inner'>
+                    <OpenIcon
+                      className='header__search__icon'
+                      icon={ searchText ? 'circle-x' : 'magnifying-glass' } />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        {/* Header Drop-downs */}
-        <div className='header__wrap'>
-          <div>
-            <GameOrder
-              onChange={onOrderChange}
-              orderBy={this.props.order.orderBy}
-              orderReverse={this.props.order.orderReverse} />
+          {/* Advanced Search Toggle */}
+          <div className='header__wrap'
+            onClick={this.props.onToggleAdvSearch}>
+            <OpenIcon
+              icon='cog'/>
           </div>
-        </div>
-        {/* Right-most portion */}
-        <div className='header__wrap header__right'>
-          <div>
-            {/* Toggle Right Sidebar */}
-            <div
-              className='header__toggle-sidebar'
-              title={browsePageShowRightSidebar ? strings.hideRightSidebar : strings.showRightSidebar}
-              onClick={onToggleRightSidebarClick}>
-              <OpenIcon icon={browsePageShowRightSidebar ? 'collapse-right' : 'expand-right'} />
-            </div>
-            {/* Toggle Left Sidebar */}
-            <div
-              className='header__toggle-sidebar'
-              title={browsePageShowLeftSidebar ? strings.hideLeftSidebar : strings.showLeftSidebar}
-              onClick={onToggleLeftSidebarClick}>
-              <OpenIcon icon={browsePageShowLeftSidebar ? 'collapse-left' : 'expand-left'} />
+          {/* Header Drop-downs */}
+          <div className='header__wrap'>
+            <div>
+              <GameOrder
+                onChange={onOrderChange}
+                orderBy={this.props.order.orderBy}
+                orderReverse={this.props.order.orderReverse} />
             </div>
           </div>
+          {/* Right-most portion */}
+          <div className='header__wrap header__right'>
+            <div>
+              {/* Toggle Right Sidebar */}
+              <div
+                className='header__toggle-sidebar'
+                title={browsePageShowRightSidebar ? strings.hideRightSidebar : strings.showRightSidebar}
+                onClick={onToggleRightSidebarClick}>
+                <OpenIcon icon={browsePageShowRightSidebar ? 'collapse-right' : 'expand-right'} />
+              </div>
+              {/* Toggle Left Sidebar */}
+              <div
+                className='header__toggle-sidebar'
+                title={browsePageShowLeftSidebar ? strings.hideLeftSidebar : strings.showLeftSidebar}
+                onClick={onToggleLeftSidebarClick}>
+                <OpenIcon icon={browsePageShowLeftSidebar ? 'collapse-left' : 'expand-left'} />
+              </div>
+            </div>
+          </div>
         </div>
+        <AdvSearchPanel/>
       </div>
     );
   }
@@ -183,13 +190,13 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
     const value = event.target.value;
     this.setState({ searchText: value });
     // "Clear" the search when the search field gets empty
-    if (value === '') { this.props.onSearch('', false); }
+    if (value === '') { this.props.onSearch(''); }
   }
 
   onSearchKeyDown = (event: React.KeyboardEvent): void => {
     if (event.key === 'Enter') {
       const value = this.state.searchText;
-      this.props.onSearch(value, true);
+      this.onSearchRedirect(value);
       easterEgg(value);
     }
   }
@@ -206,7 +213,12 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 
   onClearClick = (): void => {
     this.setState({ searchText: '' });
-    this.props.onSearch('', false);
+    this.props.onSearch('');
+  }
+
+  onSearchRedirect = (text: string): void => {
+    this.props.history.push(joinLibraryRoute(this.props.preferencesData.lastSelectedLibrary));
+    this.props.onSearch(text);
   }
 
   static contextType = LangContext;

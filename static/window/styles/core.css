@@ -475,13 +475,17 @@ body {
 
 
 /* ------ Header ------ */
-.header {
+.header__outer {
+  width: 100%;
+}
+.header__inner {
   --header-padding: 0.3em;
   display: inline-flex;
   flex-flow: wrap;
   font-size: 0.75em;
   padding: var(--header-padding);
   padding-bottom: 0.4em;
+  width: 100%
 }
 .header__wrap {
   min-height: 2rem;
@@ -1119,8 +1123,30 @@ body {
   flex: 1 1 auto;
 }
 
+/* ---- Adv Search ---- */
+.adv-search__wrapper {
+  height: 8rem;
+  max-height: 0rem;
+  transition: max-height 0.15s ease;
+}
+.adv-search__wrapper-open {
+  max-height: 8rem;
+}
+.adv-search {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  padding: 0.2rem;
+}
+.adv-search__box {
+  height: 100%;
+}
 
 /* ------ Browse ------ */
+.browse-page__wrapper {
+  height: 100%;
+  width: 100%;
+}
 .game-browser {
   display: flex;
   width: 100%;
