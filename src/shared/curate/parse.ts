@@ -4,6 +4,7 @@ import { CurationFormatObject, parseCurationFormat } from './format/parser';
 import { CFTokenizer, tokenizeCurationFormat } from './format/tokenizer';
 import { EditAddAppCurationMeta, EditCurationMeta } from './types';
 import { getTagsFromStr } from './util';
+import { validateSemiUUID, uuid } from '@renderer/util/uuid';
 
 const { str } = Coerce;
 
@@ -47,7 +48,9 @@ export async function parseCurationMetaNew(rawMeta: any): Promise<ParsedCuration
 export async function parseCurationMetaFile(data: any, onError?: (error: string) => void): Promise<ParsedCurationMeta> {
   // Default parsed data
   const parsed: ParsedCurationMeta = {
-    game: {},
+    game: {
+      id: uuid()
+    },
     addApps: [],
   };
   // Make sure it exists before calling Object.keys
@@ -72,6 +75,7 @@ export async function parseCurationMetaFile(data: any, onError?: (error: string)
   parser.prop('notes',                v => parsed.game.notes               = str(v));
   // -- New curation format --
   // Single value properties
+  parser.prop('id',                   v => parsed.game.id                  = getOrMakeId(str(v)));
   parser.prop('application path',     v => parsed.game.applicationPath     = str(v));
   parser.prop('curation notes',       v => parsed.game.curationNotes       = str(v));
   parser.prop('developer',            v => parsed.game.developer           = arrayStr(v));
@@ -102,6 +106,13 @@ export async function parseCurationMetaFile(data: any, onError?: (error: string)
   });
   // Return
   return parsed;
+}
+
+function getOrMakeId(id: string) {
+  if (validateSemiUUID(id)) {
+    return id;
+  }
+  return uuid();
 }
 
 /**

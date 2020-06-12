@@ -25,6 +25,8 @@ export type CurationWarnings = {
   nonExistingLibrary?: boolean;
   /** If there are non-content folders present in the curation folder (Crendor would be proud) */
   nonContentFolders?: string[];
+  /** Warnings pertaining to any add apps */
+  addAppWarnings?: string[];
 };
 
 /** The part of a Curation Box that displays all the warnings (if any). */

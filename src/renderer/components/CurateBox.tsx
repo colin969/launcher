@@ -34,6 +34,7 @@ import { InputField } from './InputField';
 import { AutoProgressComponent } from './ProgressComponents';
 import { SimpleButton } from './SimpleButton';
 import { TagInputField } from './TagInputField';
+import { isValidFoldername } from '@back/util/sanitizeFilename';
 
 const { strToBool } = Coerce;
 
@@ -636,6 +637,13 @@ export function CurateBox(props: CurateBoxProps) {
       {/* Fields */}
       <table className="curate-box-table">
         <tbody>
+          <CurateBoxRow title={strings.playlist.id + ':'}>
+            <InputField
+              text={props.curation && props.curation.meta.id || ''}
+              placeholder={'No ID? Something\'s broken.'}
+              { ...sharedInputProps }
+              disabled={true} />
+          </CurateBoxRow>
           <CurateBoxRow title={strings.filter.title + ':'}>
             <InputField
               text={props.curation && props.curation.meta.title || ''}
@@ -1172,6 +1180,30 @@ export function getCurationWarnings(curation: EditCuration, suggestions: Partial
   // Check if library is set
   const curLibrary = curation.meta.library;
   warns.nonExistingLibrary = (libraries.findIndex(l => l === curLibrary) === -1);
+  let addAppWarns: string[] = [];
+  for (let i = 0; i < curation.addApps.length; i++) {
+    const addApp = curation.addApps[i];
+    switch (addApp.meta.applicationPath) {
+      case ':message:':
+        break;
+      case ':extras:':
+        if (!isValidFoldername(addApp.meta.launchCommand || '')) {
+          addAppWarns.push(`Add App ${i+1} - ${addApp.meta.heading || strings.noHeading}`);
+          addAppWarns.push(strings.illegalFolderName);
+        }
+        break;
+      default:
+        const aaWarns = invalidLaunchCommandWarnings(getContentFolderByKey2(curation.key), addApp.meta.launchCommand || '', strings);
+        if (aaWarns.length > 0) {
+          addAppWarns.push(`Add App ${i+1} - ${addApp.meta.heading || strings.noHeading}`);
+          addAppWarns = addAppWarns.concat(aaWarns);
+        }
+        break;
+    }
+    if (addAppWarns.length > 0) {
+      warns.addAppWarnings = addAppWarns;
+    }
+  }
   return warns;
 }
 

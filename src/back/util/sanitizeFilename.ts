@@ -106,3 +106,10 @@ export function sanitizeFoldername(input: string, replacement = '') {
     .replace(windowsTrailingRe, replacement);
   return truncate(sanitized, 255);
 }
+
+export function isValidFoldername(name: string): boolean {
+  if (name !== '') {
+    return name === sanitizeFilename(name);
+  }
+  return false;
+}

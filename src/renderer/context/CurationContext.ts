@@ -254,7 +254,9 @@ function ensureCurationIndex(curations: EditCuration[], key: string): number {
 export function createEditCuration(key: string): EditCuration {
   return {
     key: key,
-    meta: {},
+    meta: {
+      id: uuid()
+    },
     content: [],
     unusedDirs: [],
     addApps: [],

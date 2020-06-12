@@ -32,7 +32,7 @@ export type EditAddAppCuration = {
 }
 
 /** Meta data of a curation. */
-export type EditCurationMeta = Partial<{
+export type EditCurationMeta = { id: string; } & Partial<{
   // Game fields
   title: string;
   alternateTitles: string;
@@ -54,6 +54,7 @@ export type EditCurationMeta = Partial<{
   version: string;
   originalDescription: string;
   language: string;
+  contentHash: string;
 }>
 
 /** Meta data of an additional application curation. */

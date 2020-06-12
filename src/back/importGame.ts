@@ -86,7 +86,7 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
     contentToMove.push([path.join(getCurationFolder(curation, fpPath), 'Extras'), path.join(fpPath, 'Extras', extrasAddApp.meta.launchCommand)]);
   }
   // Create and add game and additional applications
-  const gameId = validateSemiUUID(curation.key) ? curation.key : uuid();
+  const gameId = curation.meta.id;
   const oldGame = await GameManager.findGame(gameId);
   if (oldGame) {
     const response = await opts.openDialog({

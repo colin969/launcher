@@ -337,8 +337,10 @@ const langTemplate = {
     'unusedPlatform',
     'nonExistingLibrary',
     'nonContentFolders',
+    'addAppWarnings',
     'ilc_notHttp',
     'ilc_nonExistant',
+    'illegalFolderName',
   ] as const,
   playlist: [
     'enterDescriptionHere',
