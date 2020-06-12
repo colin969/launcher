@@ -1128,15 +1128,12 @@ function invalidLaunchCommandWarnings(folderPath: string, launchCommand: string,
         // Not using HTTP
         warns.push(strings.ilc_notHttp);
       }
-      const ending = lc.split('/').pop();
-      // If the string ends in file, cut off parameters
-      if (ending && ending.includes('.')) {
-        lc = lc.split('?')[0];
-      }
-      const filePath = path.join(folderPath, unescape(lc).replace(/(^\w+:|^)\/\//, ''));
+      lc = lc.split('?')[0];
+      const relPath = unescape(lc).replace(/(^\w+:|^)\/\//, '');
+      const filePath = path.join(folderPath, relPath);
       // Push a game to the list if its launch command file is missing
       if (!fs.existsSync(filePath)) {
-        warns.push(strings.ilc_nonExistant);
+        warns.push(strings.ilc_nonExistant + '\n\t - ' + relPath);
       }
     }
   }

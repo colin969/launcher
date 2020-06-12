@@ -1044,6 +1044,7 @@ body {
 }
 /* Curate Box Warnings */
 .curate-box-warnings {
+  overflow-x: auto;
   margin-bottom: 0.2rem;
 }
 .curate-box-warnings--empty {

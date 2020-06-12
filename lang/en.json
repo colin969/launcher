@@ -321,7 +321,7 @@
     "nonExistingLibrary": "'Library' is not the name of an existing library! (Default will be used)",
     "nonContentFolders": "Non-Content folders found in Curation folder. Are they supposed to be there?",
     "ilc_notHttp": "Use HTTP.",
-    "ilc_nonExistant": "Point to an existing file in your curation's 'content' folder."
+    "ilc_nonExistant": "File not found in 'content' folder."
   },
   "playlist": {
     "enterDescriptionHere": "Enter a description here...",

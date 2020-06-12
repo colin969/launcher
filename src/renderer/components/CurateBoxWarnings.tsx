@@ -62,7 +62,7 @@ export function CurateBoxWarnings(props: CurateBoxWarningsProps) {
   return (
     <>
       {/* Warnings */}
-      <div className={'curate-box-warnings' + (isEmpty ? ' curate-box-warnings--empty' : '')}>
+      <div className={'simple-scroll curate-box-warnings' + (isEmpty ? ' curate-box-warnings--empty' : '')}>
         <div className='curate-box-warnings__head'>
           {strings.warnings}: {warningCount}
         </div>
