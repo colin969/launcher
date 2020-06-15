@@ -68,10 +68,9 @@ gulp.task('config-version', (done) => {
 /* ------ Pack ------ */
 
 gulp.task('pack', (done) => {
-  const targets = createBuildTargets(process.env.PACK_PLATFORM, process.env.PACK_ARCH);
   const publish = process.env.PUBLISH ? createPublishInfo() : []; // Uses Git repo for unpublished builds
   const copyFiles = getCopyFiles();
-  console.log(publish);
+  console.log(config.isRelease);
   builder.build({
     config: {
       appId: 'com.bluemaxima.flashpoint-launcher',
@@ -86,19 +85,21 @@ gulp.task('pack', (done) => {
       extraFiles: copyFiles, // Files to copy to the build folder
       compression: 'maximum', // Only used if a compressed target (like 7z, nsis, dmg etc)
       target: 'dir', // Keep unpacked versions of every pack
-      asar: config.isRelease,
+      asar: true,
       publish: publish,
       win: {
+        target: ['nsis', '7z'],
         icon: './icons/icon.ico',
       },
       mac: {
+        target: ['dmg', '7z'],
         icon: './icons/icon.icns'
       },
       linux: {
+        target: ['deb', '7z'],
         category: 'games'
       }
-    },
-    targets: targets
+    }
   })
   .then(()         => { console.log('Pack - Done!');         })
   .catch((error)   => { console.log('Pack - Error!', error); })
@@ -119,17 +120,6 @@ function execute(command, callback) {
   child.stdout.on('data', data => { console.log(data); });
   if (callback) {
     child.once('exit', () => { callback(); });
-  }
-}
-
-function createBuildTargets(os, arch) {
-  switch (os) {
-    case 'win32':
-      return Platform.WINDOWS.createTarget('nsis', archFromString(arch));
-    case 'darwin':
-      return Platform.MAC.createTarget('dmg');
-    case 'linux':
-      return Platform.LINUX.createTarget('dir', archFromString(arch));
   }
 }
 
