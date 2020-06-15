@@ -1,4 +1,4 @@
-name: Build and Release Status
+name: Release Status
 
 on:
   push:
@@ -51,32 +51,5 @@ jobs:
         CI: true
     - name: npm release
       run: npm run release
-    - name: Package releases
-      if: matrix.os != 'macOS-latest'
-      run: |
-        7z a dist/flashpoint-launcher_${{ matrix.os }}.zip ./dist/*/*
-    - name: Package releases (mac)
-      if: matrix.os == 'macOS-latest'
-      run: |
-        zip -r dist/flashpoint-launcher_${{ matrix.os }}.zip ./dist/*/*
-    - name: Package Setup
-      if: matrix.os == 'windows-latest'
-      run: |
-        mv dist/*.exe dist/FP_Win32_Setup.exe
-    - name: Upload dist zips to latest release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist/flashpoint-launcher_${{ matrix.os }}.zip
-        asset_name: flashpoint-launcher_${{ matrix.os }}.zip
-        tag: ${{ github.ref }}
-        overwrite: true
-    - name: Upload setup to latest release
-      if: matrix.os == 'windows-latest'
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist/FP_Win32_Setup.exe
-        asset_name: FP_Win32_Setup.exe
-        tag: ${{ github.ref }}
-        overwrite: true
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
