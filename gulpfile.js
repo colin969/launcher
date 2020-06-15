@@ -158,8 +158,8 @@ function getCopyFiles() {
 function createPublishInfo() {
   return [
     {
-      provider: 'generic',
-      url: 'https://download.unstable.life/${name}/${os}/${arch}/${channel}/'
+      provider: 'github',
+      vPrefixedTagName: false
     }
   ];
 }
