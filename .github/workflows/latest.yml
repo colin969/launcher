@@ -26,12 +26,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 14.x
-    - name: npm install
+    - name: Install Dependencies
       run: npm install
       env:
         CI: true
-    - name: npm release
-      run: npm run release
+    - name: Build and Publish 
+      run: npm run pulihs
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         EP_DRAFT: true
