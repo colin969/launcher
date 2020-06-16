@@ -32,7 +32,7 @@ export function CurateBoxWarnings(props: CurateBoxWarningsProps) {
   const strings = React.useContext(LangContext).curate;
   const { warnings } = props;
   // Count the number of warnings
-  const warningCount = useMemo(() => getWarningCount(props.warnings), [props.warnings]);
+  const warningCount = useMemo(() => getWarningCount(props.warnings), [props.warnings]); 
   // Converts warnings into a single string
   const warningsStrings = useMemo(() => {
     return Object.keys(warnings).map((key) => {

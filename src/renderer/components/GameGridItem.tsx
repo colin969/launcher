@@ -55,7 +55,7 @@ export function GameGridItem(props: GameGridItemProps) {
             </div>
           </div>
         </div>
-        <div className='game-grid-item__title' title={title}>
+        <div className="game-grid-item__title" title={title}>
           <p className='game-grid-item__title__text'>{title}</p>
         </div>
       </li>

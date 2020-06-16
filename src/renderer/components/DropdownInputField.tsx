@@ -65,7 +65,7 @@ export class DropdownInputField extends React.Component<DropdownInputFieldProps,
         reference={this.inputRef} />
     );
     // Render
-    if (editable) {
+    if (editable){
       return (
         <div
           className={'input-dropdown' + (this.props.disabled ? ' input-dropdown--disabled' : '')}
