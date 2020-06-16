@@ -11,6 +11,7 @@
     "build": "gulp build",
     "watch": "gulp watch",
     "pack": "gulp pack",
+    "snapshot": "cross-env-shell NODE_ENV=production \"npm run build && npm run pack\"",
     "test": "jest",
     "lint": "eslint ./src/**/*.{ts,tsx} ./tests/**/*.ts ./gulpfile.js",
     "pack:linux": "cross-env PACK_PLATFORM=linux PACK_ARCH=x64 gulp pack",
