@@ -61,7 +61,7 @@ export class ResizableSidebar extends React.Component<ResizableSidebarProps, Res
     return (
       <div
         className={
-          'game-browser__sidebar' +
+          "game-browser__sidebar" +
           (className ? ' '+className+' ' : '') +
           (hide ? '' : ' game-browser__sidebar--hidden')
         }

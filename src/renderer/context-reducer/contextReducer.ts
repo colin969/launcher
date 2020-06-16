@@ -9,7 +9,7 @@ import { ReducerContext, ReducerContextValue } from './interfaces';
 export function createContextReducer<R extends React.Reducer<any, any>>(
   reducer: R,
   initialState: ReducerContextValue<R>[0]
-): ReducerContext<R> {
+): ReducerContext<R> { 
   // Default value of the context
   // (Value returned when attempting to get the value of a context that has no accessible provider)
   const defaultValue: ReducerContextValue<R> = [

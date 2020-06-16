@@ -9,7 +9,7 @@ export type ConfigFlashpointPathInputProps = {
   buttonText?: string;
   /** Called when the value of the input field is changed. */
   onInputChange?: (input: string) => void;
-};
+};;
 
 /** Text input element made specifically for setting the Flashpoint path at the config page. */
 export class ConfigFlashpointPathInput extends React.Component<ConfigFlashpointPathInputProps> {
