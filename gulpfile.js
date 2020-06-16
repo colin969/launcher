@@ -1,13 +1,12 @@
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const builder = require('electron-builder');
-const { Platform, archFromString } = require('electron-builder');
 const { exec } = require('child_process');
 
 const packageJson = JSON.parse(fs.readFileSync('./package.json'));
 const config = {
   buildVersion: Date.now().toString(),
-  isRelease: process.env.NODE_ENV === 'production',
+  isRelease: !!process.env.PUBLISH,
   isStaticInstall: packageJson.config.installed,
   static: {
     src: './static',
@@ -21,6 +20,70 @@ const config = {
     src: './src/back',
   }
 };
+// Files to copy after packing
+const copyFiles = [
+  { // Only copy 7zip execs for packed platform
+    from: './extern/7zip-bin',
+    to: './extern/7zip-bin',
+    filter: ['${os}/**/*']
+  },
+  './lang',
+  './licenses',
+  './.installed',
+  'ormconfig.json',
+  {
+    from: './LICENSE',
+    to: './licenses/LICENSE'
+  },
+  { // Copy the OS specific upgrade file
+    from: './upgrade/${os}.json',
+    to: './upgrade.json'
+  }
+];
+// Options to append when releasing
+const extraOptions = {
+  win: {
+    target: [
+      {
+        target: 'nsis',
+        arch: ['x64', 'ia32']
+      },
+      {
+        target: 'zip',
+        arch: ['x64', 'ia32']
+      }
+    ],
+    icon: './icons/icon.ico'
+  },
+  mac: {
+    target: ['dmg', 'zip'],
+    icon: './icons/icon.icns'
+  },
+  linux: {
+    target: [
+      {
+        target: 'deb',
+        arch: ['x64', 'ia32']
+      },
+      {
+        target: 'snap',
+        arch: ['x64', 'ia32']
+      },
+      {
+        target: 'zip',
+        arch: ['x64', 'ia32']
+      }
+    ],
+    category: 'games'
+  }
+};
+// Publish info for electron builder
+const publishInfo = [
+  {
+    provider: 'github',
+    vPrefixedTagName: false
+  }
+];
 
 /* ------ Watch ------ */
 
@@ -68,12 +131,12 @@ gulp.task('config-version', (done) => {
 /* ------ Pack ------ */
 
 gulp.task('pack', (done) => {
-  const publish = process.env.PUBLISH ? createPublishInfo() : []; // Uses Git repo for unpublished builds
-  const copyFiles = getCopyFiles();
+  const publish = config.isRelease ? publishInfo : []; // Uses Git repo for unpublished builds
+  const extraOpts = config.isRelease ? extraOptions : {};
   console.log(config.isRelease);
-  console.log(publish);
+  console.log(extraOpts);
   builder.build({
-    config: {
+    config: Object.assign({
       appId: 'com.bluemaxima.flashpoint-launcher',
       productName: 'Flashpoint',
       directories: {
@@ -85,23 +148,22 @@ gulp.task('pack', (done) => {
       ],
       extraFiles: copyFiles, // Files to copy to the build folder
       compression: 'maximum', // Only used if a compressed target (like 7z, nsis, dmg etc)
-      target: 'dir', // Keep unpacked versions of every pack
+      target: 'dir',
       asar: true,
       publish: publish,
       artifactName: '${productName}-${version}_${os}-${arch}.${ext}',
       win: {
-        target: ['nsis', '7z'],
-        icon: './icons/icon.ico',
+        target: 'dir',
+        icon: './icons/icon.ico'
       },
       mac: {
-        target: ['dmg', '7z'],
+        target: 'dir',
         icon: './icons/icon.icns'
       },
       linux: {
-        target: ['deb', '7z'],
-        category: 'games'
+        target: 'dir'
       }
-    }
+    }, extraOpts)
   })
   .then(()         => { console.log('Pack - Done!');         })
   .catch((error)   => { console.log('Pack - Error!', error); })
@@ -123,35 +185,4 @@ function execute(command, callback) {
   if (callback) {
     child.once('exit', () => { callback(); });
   }
-}
-
-function getCopyFiles() {
-  return [
-    { // Only copy 7zip execs for packed platform
-      from: './extern/7zip-bin',
-      to: './extern/7zip-bin',
-      filter: ['${os}/**/*']
-    },
-    './lang',
-    './licenses',
-    './.installed',
-    'ormconfig.json',
-    {
-      from: './LICENSE',
-      to: './licenses/LICENSE'
-    },
-    { // Copy the OS specific upgrade file
-      from: './upgrade/${os}.json',
-      to: './upgrade.json'
-    }
-  ];
-}
-
-function createPublishInfo() {
-  return [
-    {
-      provider: 'github',
-      vPrefixedTagName: false
-    }
-  ];
 }
