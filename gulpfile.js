@@ -45,22 +45,22 @@ const extraOptions = {
   win: {
     target: [
       {
-        target: 'nsis',
+        target: 'nsis-web',
         arch: ['x64', 'ia32']
       },
       {
-        target: 'zip',
+        target: '7z',
         arch: ['x64', 'ia32']
       }
     ],
     icon: './icons/icon.ico'
   },
   mac: {
-    target: ['dmg', 'zip'],
+    target: ['dmg', '7z'],
     icon: './icons/icon.icns'
   },
   linux: {
-    target: ['deb', 'zip'],
+    target: ['deb', '7z'],
     category: 'games'
   }
 };
