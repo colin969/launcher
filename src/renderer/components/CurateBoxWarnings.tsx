@@ -42,7 +42,7 @@ export function CurateBoxWarnings(props: CurateBoxWarningsProps) {
       if (listObj && listObj.length > 0) {
         const suffix = '\t' + listObj.join('\n\t') + '\n';
         return `- ${strings[key as keyof CurationWarnings]}\n${suffix}`;
-      } else if (!listObj && obj) {
+      } else if (!listObj && obj){
         return `- ${strings[key as keyof CurationWarnings]}\n`;
       }
     });
