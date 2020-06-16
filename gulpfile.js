@@ -88,6 +88,7 @@ gulp.task('pack', (done) => {
       target: 'dir', // Keep unpacked versions of every pack
       asar: true,
       publish: publish,
+      artifactName: '${productName}-${version}_${os}-${arch}.${ext}',
       win: {
         target: ['nsis', '7z'],
         icon: './icons/icon.ico',
