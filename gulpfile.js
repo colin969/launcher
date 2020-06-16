@@ -60,20 +60,7 @@ const extraOptions = {
     icon: './icons/icon.icns'
   },
   linux: {
-    target: [
-      {
-        target: 'deb',
-        arch: ['x64', 'ia32']
-      },
-      {
-        target: 'snap',
-        arch: ['x64', 'ia32']
-      },
-      {
-        target: 'zip',
-        arch: ['x64', 'ia32']
-      }
-    ],
+    target: ['deb', 'zip'],
     category: 'games'
   }
 };
