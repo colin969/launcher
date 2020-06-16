@@ -86,7 +86,7 @@
     "@typescript-eslint/eslint-plugin": "1.13.0",
     "@typescript-eslint/parser": "1.13.0",
     "coveralls": "3.1.0",
-    "cross-env": "5.2.0",
+    "cross-env": "5.2.1",
     "electron": "8.2.3",
     "electron-builder": "22.5.1",
     "enzyme": "3.11.0",
