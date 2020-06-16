@@ -71,6 +71,7 @@ gulp.task('pack', (done) => {
   const publish = process.env.PUBLISH ? createPublishInfo() : []; // Uses Git repo for unpublished builds
   const copyFiles = getCopyFiles();
   console.log(config.isRelease);
+  console.log(publish);
   builder.build({
     config: {
       appId: 'com.bluemaxima.flashpoint-launcher',
