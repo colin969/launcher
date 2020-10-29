@@ -158,6 +158,7 @@ export enum WindowIPC {
   WINDOW_MOVE     = 'window-move',
   /** Sent whenever the windows size changes. (main -> renderer). */
   WINDOW_RESIZE   = 'window-resize',
+  LAUNCH_GAME     = 'launch-game',
 }
 
 /** IPC channels used to relay game manager events from  */

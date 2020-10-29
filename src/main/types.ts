@@ -21,5 +21,6 @@ export type InitArgs = Partial<{
 
 export type Init = {
   args: InitArgs;
+  launchGame?: string;
   rest: string;
 }

@@ -73,10 +73,53 @@ export function main(init: Init): void {
   function startup() {
     app.allowRendererProcessReuse = true; // Hides the "new default value" warning message (remove this line after upgrading to electron 9)
 
+    // Set up protocol handler (If not set)
+    app.setAsDefaultProtocolClient('flashpoint');
+
     // Single process
     // No more than one "main" instance should exist at any time. Mutliple "flash" instances are fine.
     if (!app.requestSingleInstanceLock()) {
-      app.exit();
+      // If there are init args, process them with the existing app
+      (async () => {
+        await exists('./.installed')
+        .then(async (exists) => {
+          state._installed = exists;
+          state.mainFolderPath = Util.getMainFolderPath(state._installed);
+          const secretFilePath = path.join(state.mainFolderPath, 'secret.txt');
+          try {
+            state._secret = await readFile(secretFilePath, { encoding: 'utf8' });
+          } catch (e) {
+            state._secret = randomBytes(2048).toString('hex');
+            try {
+              await writeFile(secretFilePath, state._secret, { encoding: 'utf8' });
+            } catch (e) {
+              console.warn(`Failed to save new secret to disk.\n${e}`);
+            }
+          }
+        });
+        await timeout(new Promise((resolve, reject) => {
+          state.backHost.port = '12001';
+          const sock = new WebSocket(state.backHost.href);
+          sock.onclose = () => { reject(new Error('Failed to authenticate connection to back.')); };
+          sock.onerror = (event) => { reject(event.error); };
+          sock.onopen  = () => {
+            sock.onmessage = () => {
+              sock.onclose = noop;
+              sock.onerror = noop;
+              state.socket.setSocket(sock);
+              resolve(sock);
+            };
+            sock.send(state._secret);
+          };
+        }), TIMEOUT_DELAY)
+        .then(() => {
+          if (init.launchGame) {
+            state.socket.send(BackIn.LAUNCH_GAME, init.launchGame);
+          }
+        });
+      })().then(() => {
+        app.exit();
+      });
       return;
     }
 
@@ -117,7 +160,7 @@ export function main(init: Init): void {
     }))
     // Load or generate secret
     .then(async () => {
-      if (init.args['connect-remote'] || init.args['host-remote'] || init.args['back-only']) {
+      if (true) {
         const secretFilePath = path.join(state.mainFolderPath, 'secret.txt');
         try {
           state._secret = await readFile(secretFilePath, { encoding: 'utf8' });
@@ -213,6 +256,11 @@ export function main(init: Init): void {
       .then(() => {
         if (!state.window) {
           state.window = createMainWindow();
+        }
+      })
+      .then(() => {
+        if (init.launchGame) {
+          state.socket.send(BackIn.LAUNCH_GAME, init.launchGame);
         }
       });
     }

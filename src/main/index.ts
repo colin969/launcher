@@ -21,7 +21,22 @@ function getArgs(): Init {
   let lastArgIndex = -1;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
+    console.log(arg);
     const eqIndex = arg.indexOf('=');
+    if (arg.startsWith('flashpoint://')) {
+      const url = new URL(arg);
+      console.log(`url: ${url.href}`);
+      console.log(`command: ${url.hostname}`);
+      const command = url.hostname;
+
+      const parts = url.pathname.substr(1).split('/');
+      if (parts.length > 0) {
+        if (command === 'run') {
+          init.launchGame = parts[0];
+        }
+      }
+      continue;
+    }
     if (eqIndex >= 0) {
       const name = arg.substr(0, eqIndex);
       const value = arg.substr(eqIndex + 1);
