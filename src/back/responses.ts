@@ -186,25 +186,28 @@ export function registerRequestCallbacks(state: BackState): void {
   state.socketServer.register(BackIn.LAUNCH_ADDAPP, async (event, id) => {
     const addApp = await GameManager.findAddApp(id);
     if (addApp) {
-      await state.apiEmitters.games.onWillLaunchAddApp.fire(addApp);
-      const platform = addApp.parentGame ? addApp.parentGame : '';
-      GameLauncher.launchAdditionalApplication({
-        addApp,
-        fpPath: path.resolve(state.config.flashpointPath),
-        htdocsPath: state.config.htdocsFolderPath,
-        native: addApp.parentGame && state.config.nativePlatforms.some(p => p === platform) || false,
-        execMappings: state.execMappings,
-        lang: state.languageContainer,
-        isDev: state.isDev,
-        exePath: state.exePath,
-        appPathOverrides: state.preferences.appPathOverrides,
-        providers: await getProviders(state),
-        proxy: state.config.browserModeProxy,
-        openDialog: state.socketServer.showMessageBoxBack(event.client),
-        openExternal: state.socketServer.openExternal(event.client),
-        runGame: runGameFactory(state)
+      await state.apiEmitters.games.onWillLaunchAddApp.fire(addApp)
+      .then(async () => {
+        const platform = addApp.parentGame ? addApp.parentGame : '';
+        await GameLauncher.launchAdditionalApplication({
+          addApp,
+          fpPath: path.resolve(state.config.flashpointPath),
+          htdocsPath: state.config.htdocsFolderPath,
+          native: addApp.parentGame && state.config.nativePlatforms.some(p => p === platform) || false,
+          execMappings: state.execMappings,
+          lang: state.languageContainer,
+          isDev: state.isDev,
+          exePath: state.exePath,
+          appPathOverrides: state.preferences.appPathOverrides,
+          providers: await getProviders(state),
+          proxy: state.config.browserModeProxy,
+          openDialog: state.socketServer.showMessageBoxBack(event.client),
+          openExternal: state.socketServer.openExternal(event.client),
+          runGame: runGameFactory(state)
+        });
+        state.apiEmitters.games.onDidLaunchAddApp.fire(addApp);
       });
-      state.apiEmitters.games.onDidLaunchAddApp.fire(addApp);
+
     }
   });
 

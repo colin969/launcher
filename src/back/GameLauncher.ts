@@ -187,11 +187,14 @@ export namespace GameLauncher {
               execFile: true
             }
           };
-          await onWillEvent.fire(gameLaunchInfo);
-          const managedProc = opts.runGame(gameLaunchInfo);
-          log.info(logSource, `Launch Game "${opts.game.title}" (PID: ${managedProc.getPid()}) [\n`+
-                    `    applicationPath: "${appPath}",\n`+
-                    `    launchCommand:   "${opts.game.launchCommand}" ]`);
+          onWillEvent.fire(gameLaunchInfo)
+          .then(() => {
+            const managedProc = opts.runGame(gameLaunchInfo);
+            log.info(logSource, `Launch Game "${opts.game.title}" (PID: ${managedProc.getPid()}) [\n`+
+                      `    applicationPath: "${appPath}",\n`+
+                      `    launchCommand:   "${opts.game.launchCommand}" ]`);
+          })
+          .catch(() => log.error('Game Launcher', 'Error when processing events when launching game'));
           return;
         }
 
@@ -222,11 +225,14 @@ export namespace GameLauncher {
             execFile: true
           }
         };
-        await onWillEvent.fire(gameLaunchInfo);
-        const managedProc = opts.runGame(gameLaunchInfo);
-        log.info(logSource, `Launch Game "${opts.game.title}" (PID: ${managedProc.getPid()}) [\n`+
-                  `    applicationPath: "${appPath}",\n`+
-                  `    launchCommand:   "${opts.game.launchCommand}" ]`);
+        onWillEvent.fire(gameLaunchInfo)
+        .then(() => {
+          const managedProc = opts.runGame(gameLaunchInfo);
+          log.info(logSource, `Launch Game "${opts.game.title}" (PID: ${managedProc.getPid()}) [\n`+
+                    `    applicationPath: "${appPath}",\n`+
+                    `    launchCommand:   "${opts.game.launchCommand}" ]`);
+        })
+        .catch(() => log.error('Game Launcher', 'Error when processing events when launching game'));
       } break;
       default: {
         const gamePath: string = path.isAbsolute(appPath) ? fixSlashes(appPath) : fixSlashes(path.join(opts.fpPath, appPath));
@@ -242,7 +248,14 @@ export namespace GameLauncher {
             env,
           }
         };
-        await onWillEvent.fire(gameLaunchInfo);
+        onWillEvent.fire(gameLaunchInfo)
+        .then(() => {
+          const managedProc = opts.runGame(gameLaunchInfo);
+          log.info(logSource, `Launch Game "${opts.game.title}" (PID: ${managedProc.getPid()}) [\n`+
+                    `    applicationPath: "${appPath}",\n`+
+                    `    launchCommand:   "${opts.game.launchCommand}" ]`);
+        })
+        .catch(() => log.error('Game Launcher', 'Error when processing events when launching game'));
         const command: string = createCommand(gameLaunchInfo.launchInfo);
         const managedProc = opts.runGame(gameLaunchInfo);
         log.info(logSource,`Launch Game "${opts.game.title}" (PID: ${managedProc.getPid()}) [\n`+

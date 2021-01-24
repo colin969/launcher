@@ -193,10 +193,10 @@ export async function importCuration(opts: ImportCurationOpts): Promise<void> {
     await importGameImage(curation.screenshot, game.id, SCREENSHOTS, path.join(fpPath, imagePath))
     .then(() => { if (log) { logMessage('Screenshot Copied', curation); } });
   })
-  .then(async () => {
+  .then(() =>
     // Notify extensions and let them make changes
-    await onWillImportCuration.fire(curationState);
-  })
+    onWillImportCuration.fire(curationState)
+  )
   .then(async () => {
     // Copy each paired content folder one at a time (allows for cancellation)
     for (const pair of curationState.contentToMove) {
@@ -236,12 +236,15 @@ export async function launchAddAppCuration(curationKey: string, appCuration: Edi
   skipLink: boolean, opts: Omit<LaunchAddAppOpts, 'addApp'>, onWillEvent: ApiEmitter<AdditionalApp>, onDidEvent: ApiEmitter<AdditionalApp>) {
   if (!skipLink || !symlinkCurationContent) { await linkContentFolder(curationKey, opts.fpPath, opts.isDev, opts.exePath, opts.htdocsPath, symlinkCurationContent); }
   const addApp = createAddAppFromCurationMeta(appCuration, createPlaceholderGame());
-  await onWillEvent.fire(addApp);
-  GameLauncher.launchAdditionalApplication({
-    ...opts,
-    addApp: addApp,
-  });
-  onDidEvent.fire(addApp);
+  onWillEvent.fire(addApp)
+  .then(() => {
+    GameLauncher.launchAdditionalApplication({
+      ...opts,
+      addApp: addApp,
+    });
+    onDidEvent.fire(addApp);
+  })
+  .catch(() => log.error('Game Launcher', 'Error when processing events when launching add app'));
 }
 
 function logMessage(text: string, curation: EditCuration): void {

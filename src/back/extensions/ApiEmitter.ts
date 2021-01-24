@@ -46,6 +46,7 @@ export class ApiEmitter<T> {
           await Promise.resolve(listener.call(undefined, event));
         } catch (error) {
           log.error('Extensions', `Error executing event listener.\n${error}`);
+          throw error;
         }
       } else {
         try {
@@ -53,6 +54,7 @@ export class ApiEmitter<T> {
           await Promise.resolve(listener[0].call(listener[1], event));
         } catch (error) {
           log.error('Extensions', `Error executing event listener.\n${error}`);
+          throw error;
         }
         // [Listener, Args] array
       }
